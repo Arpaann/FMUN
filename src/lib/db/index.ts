@@ -1115,6 +1115,9 @@ class DatabaseRepository {
     title: string;
     details: string;
   }): Promise<SuggestionSubmission> {
+    if (!this.suggestions) {
+      this.suggestions = [];
+    }
     const item: SuggestionSubmission = {
       id: `sug-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       name: data.name,
@@ -1133,10 +1136,16 @@ class DatabaseRepository {
   }
 
   public async getSuggestions(): Promise<SuggestionSubmission[]> {
+    if (!this.suggestions) {
+      this.suggestions = [];
+    }
     return [...this.suggestions];
   }
 
   public async updateSuggestionStatus(id: string, status: 'new' | 'reviewed' | 'accepted'): Promise<boolean> {
+    if (!this.suggestions) {
+      this.suggestions = [];
+    }
     const item = this.suggestions.find((s) => s.id === id);
     if (item) {
       item.status = status;
