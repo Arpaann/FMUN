@@ -169,6 +169,7 @@ export const conferenceSettingsSchema = z.object({
   physical_enabled: z.boolean().default(true),
   manual_transfer_enabled: z.boolean().default(true),
   song_submissions_public: z.boolean().default(true),
+  schedule_items: z.array(z.any()).optional(),
 });
 
 export const paymentVerificationSchema = z.object({

@@ -86,4 +86,42 @@ describe('3. Country Allocation & Concurrency Protection', () => {
     const reReserve = await db.reserveCountry(commId, targetCountry.id, 15);
     expect(reReserve.success).toBe(true);
   });
+
+  it('reserves a country by typed name and strictly rejects duplicate repeated selection in the same committee', async () => {
+    const committees = await db.getCommittees();
+    const commId = committees[0].id;
+
+    // First delegate types "Japan"
+    const firstTyped = await db.reserveCountryByTypedName(commId, 'japan');
+    expect(firstTyped.success).toBe(true);
+    expect(firstTyped.country?.name).toBe('Japan');
+
+    // Second delegate attempts to type the same country ("Japan" or "JAPAN") in this committee
+    const duplicateTyped = await db.reserveCountryByTypedName(commId, 'JAPAN');
+    expect(duplicateTyped.success).toBe(false);
+    expect(duplicateTyped.message).toContain('already chosen or held');
+
+    // Checking availability also reports unavailable
+    const check = await db.checkCountryAvailability(commId, 'Japan');
+    expect(check.available).toBe(false);
+    expect(check.message).toContain('already chosen or held');
+  });
+
+  it('stores and retrieves delegate suggestions & ideas', async () => {
+    const suggestion = await db.submitSuggestion({
+      name: 'Prashant KC',
+      faculty: '+2 Science',
+      category: 'crisis',
+      title: 'Global Cyber Grid Blackout',
+      details: 'A midnight cyber attack scenario requiring delegates to negotiate emergency protocols.',
+    });
+
+    expect(suggestion.id).toBeDefined();
+    expect(suggestion.title).toBe('Global Cyber Grid Blackout');
+    expect(suggestion.status).toBe('new');
+
+    const all = await db.getSuggestions();
+    expect(all.some((s) => s.id === suggestion.id)).toBe(true);
+  });
 });
+

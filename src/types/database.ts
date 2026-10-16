@@ -39,8 +39,33 @@ export interface ConferenceSettings {
   physical_enabled: boolean;
   manual_transfer_enabled: boolean;
   song_submissions_public: boolean;
+  schedule_items?: ScheduleItemConfig[];
   created_at: string;
   updated_at: string;
+}
+
+export interface ScheduleItemConfig {
+  id: string;
+  day: number;
+  time: string;
+  title: string;
+  desc: string;
+  tag: string;
+  highlight?: boolean;
+}
+
+export interface SuggestionSubmission {
+  id: string;
+  name: string;
+  faculty?: string | null;
+  stream?: string | null;
+  category?: 'agenda' | 'crisis' | 'event' | 'general';
+  title?: string;
+  details?: string;
+  topic?: string;
+  idea?: string;
+  status: 'new' | 'reviewed' | 'accepted';
+  created_at: string;
 }
 
 export interface Profile {
@@ -81,6 +106,8 @@ export interface CommitteeCountry {
   id: string;
   committee_id: string;
   country_id: string;
+  status?: 'available' | 'held' | 'assigned';
+  is_priority?: boolean;
   is_active: boolean;
   created_at: string;
 }
@@ -194,3 +221,4 @@ export interface AuditLog {
   ip_address: string | null;
   created_at: string;
 }
+

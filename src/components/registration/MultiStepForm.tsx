@@ -17,6 +17,7 @@ import {
   Copy,
   Check,
   Building,
+  Search,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Committee, Country, ConferenceSettings } from '@/types/database';
@@ -30,26 +31,30 @@ interface MultiStepFormProps {
 export function MultiStepForm({ settings, committees }: MultiStepFormProps) {
   const router = useRouter();
 
-  // Streamlined 3-step flow:
-  // Step 1: Your Details (+2 Faculty)
-  // Step 2: Committee & Country (All inside the form!)
-  // Step 3: Payment & Confirmation
+  // 3-step flow:
+  // Step 1: Delegate Information (+2 Science & Management)
+  // Step 2: Committee & Typed Country with duplicate rejection
+  // Step 3: Payment & Pass
   const [currentStep, setCurrentStep] = useState(1);
 
-  // Delegate info
+  // Delegate details
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [institution, setInstitution] = useState('Fluorescent Secondary School');
   const [faculty, setFaculty] = useState('+2 Science');
 
-  // Committee & Country
+  // Committee & Typed Country
   const [selectedCommitteeId, setSelectedCommitteeId] = useState(committees[0]?.id || '');
-  const [committeeCountries, setCommitteeCountries] = useState<
-    { country: Country; status: 'available' | 'held' | 'assigned' }[]
-  >([]);
-  const [loadingCountries, setLoadingCountries] = useState(false);
-  const [selectedCountryId, setSelectedCountryId] = useState<string | null>(null);
+  const [typedCountryInput, setTypedCountryInput] = useState('');
+  const [isCheckingCountry, setIsCheckingCountry] = useState(false);
+  const [countryCheckResult, setCountryCheckResult] = useState<{
+    status: 'idle' | 'success' | 'taken' | 'invalid';
+    message?: string;
+  }>({ status: 'idle' });
+
+  // Reserved country allocation
+  const [reservedCountry, setReservedCountry] = useState<Country | null>(null);
   const [allocationId, setAllocationId] = useState<string | null>(null);
   const [reservationToken, setReservationToken] = useState<string | null>(null);
   const [reservationExpiry, setReservationExpiry] = useState<string | null>(null);
@@ -66,30 +71,6 @@ export function MultiStepForm({ settings, committees }: MultiStepFormProps) {
   const [confirmedReference, setConfirmedReference] = useState<string | null>(null);
   const [copiedRef, setCopiedRef] = useState(false);
 
-  // Load committee country availability whenever committee changes
-  useEffect(() => {
-    if (!selectedCommitteeId) return;
-
-    let isMounted = true;
-    setLoadingCountries(true);
-
-    fetch(`/api/allocations/committee-countries?committeeId=${selectedCommitteeId}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (isMounted && data.countries) {
-          setCommitteeCountries(data.countries);
-        }
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (isMounted) setLoadingCountries(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [selectedCommitteeId]);
-
   // Hold Timer countdown
   useEffect(() => {
     if (!reservationExpiry) return;
@@ -98,46 +79,103 @@ export function MultiStepForm({ settings, committees }: MultiStepFormProps) {
       const remaining = Math.max(0, Math.floor((new Date(reservationExpiry).getTime() - Date.now()) / 1000));
       setSecondsRemaining(remaining);
       if (remaining === 0) {
-        setSelectedCountryId(null);
+        setReservedCountry(null);
         setAllocationId(null);
         setReservationToken(null);
         setReservationExpiry(null);
-        setSubmitError('Reservation hold expired. Please pick or randomize your country again.');
+        setCountryCheckResult({
+          status: 'invalid',
+          message: 'Your 15-minute country hold has expired. Please type and reserve your country again.',
+        });
       }
     }, 1000);
 
     return () => clearInterval(interval);
   }, [reservationExpiry]);
 
-  // Reserve country
-  const handleSelectCountry = async (countryId: string) => {
+  // When committee changes, reset reserved country
+  const handleCommitteeChange = (newCommId: string) => {
+    setSelectedCommitteeId(newCommId);
+    setReservedCountry(null);
+    setAllocationId(null);
+    setReservationToken(null);
+    setReservationExpiry(null);
+    setCountryCheckResult({ status: 'idle' });
+  };
+
+  // Typed Country Check & Reserve
+  const handleCheckAndReserveTypedCountry = async () => {
+    if (!typedCountryInput.trim()) {
+      setCountryCheckResult({
+        status: 'invalid',
+        message: 'Please type the name of the country you want to represent.',
+      });
+      return;
+    }
+
+    setIsCheckingCountry(true);
     setSubmitError(null);
+
     try {
-      const res = await fetch('/api/allocations/reserve', {
+      const res = await fetch('/api/allocations/reserve-typed', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ committeeId: selectedCommitteeId, countryId }),
+        body: JSON.stringify({
+          committeeId: selectedCommitteeId,
+          countryInput: typedCountryInput.trim(),
+        }),
       });
+
       const data = await res.json();
 
-      if (!res.ok || !data.success) {
-        setSubmitError(data.message || 'Country is already taken');
+      if (res.status === 409) {
+        // Taken or duplicate!
+        setReservedCountry(null);
+        setAllocationId(null);
+        setReservationToken(null);
+        setReservationExpiry(null);
+        setCountryCheckResult({
+          status: 'taken',
+          message: data.message || `That country is already taken in this committee! Please type another country.`,
+        });
         return;
       }
 
-      setSelectedCountryId(countryId);
+      if (!res.ok || !data.success) {
+        setReservedCountry(null);
+        setAllocationId(null);
+        setReservationToken(null);
+        setReservationExpiry(null);
+        setCountryCheckResult({
+          status: 'invalid',
+          message: data.message || 'Country not recognized. Please check your spelling.',
+        });
+        return;
+      }
+
+      // Successfully reserved
+      setReservedCountry(data.country);
       setAllocationId(data.allocationId);
       setReservationToken(data.token);
       setReservationExpiry(data.expiry);
+      setCountryCheckResult({
+        status: 'success',
+        message: `${data.country.display_name} is available and successfully reserved!`,
+      });
     } catch {
-      setSubmitError('Failed to reserve country. Please try again.');
+      setCountryCheckResult({
+        status: 'invalid',
+        message: 'Unable to check country availability. Please check your connection.',
+      });
+    } finally {
+      setIsCheckingCountry(false);
     }
   };
 
-  // Random Country Generator
+  // Random country generator
   const handleGenerateRandom = async () => {
-    setSubmitError(null);
     setRandomizing(true);
+    setSubmitError(null);
     try {
       const res = await fetch('/api/allocations/random', {
         method: 'POST',
@@ -145,36 +183,50 @@ export function MultiStepForm({ settings, committees }: MultiStepFormProps) {
         body: JSON.stringify({ committeeId: selectedCommitteeId }),
       });
       const data = await res.json();
-
       if (!res.ok || !data.success) {
-        setSubmitError(data.message || 'No country could be randomly generated.');
+        setCountryCheckResult({
+          status: 'invalid',
+          message: data.message || 'No countries currently available in this committee.',
+        });
         return;
       }
 
-      setSelectedCountryId(data.country.id);
+      setReservedCountry(data.country);
       setAllocationId(data.allocationId);
       setReservationToken(data.token);
       setReservationExpiry(data.expiry);
+      setTypedCountryInput(data.country.name);
+      setCountryCheckResult({
+        status: 'success',
+        message: `Randomly assigned: ${data.country.display_name}!`,
+      });
     } catch {
-      setSubmitError('Failed to pick random country.');
+      setCountryCheckResult({
+        status: 'invalid',
+        message: 'Error generating random country. Please try again.',
+      });
     } finally {
       setRandomizing(false);
     }
   };
 
-  // Submit Registration
+  // Final Registration Submission
   const handleSubmit = async () => {
-    setSubmitError(null);
+    if (!termsAccepted) {
+      setSubmitError('Please accept the delegate terms & code of conduct.');
+      return;
+    }
 
-    if (!selectedCountryId || !allocationId || !reservationToken) {
-      setSubmitError('Please choose or generate your country in Step 2.');
+    if (!reservedCountry || !allocationId || !reservationToken) {
+      setSubmitError('Please type and confirm your country reservation before proceeding.');
       return;
     }
 
     setIsSubmitting(true);
+    setSubmitError(null);
 
     try {
-      const res = await fetch('/api/register', {
+      const res = await fetch('/api/registration/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -184,41 +236,40 @@ export function MultiStepForm({ settings, committees }: MultiStepFormProps) {
           institution,
           academicLevel: faculty,
           committeeId: selectedCommitteeId,
-          countryId: selectedCountryId,
+          countryId: reservedCountry.id,
           allocationId,
           reservationToken,
           paymentMethod,
-          termsAccepted: true,
+          dietaryRequirements: null,
+          consentGiven: true,
         }),
       });
 
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        setSubmitError(data.message || 'Registration failed.');
-        setIsSubmitting(false);
+        setSubmitError(data.message || 'Registration submission failed. Please try again.');
         return;
       }
 
       setConfirmedReference(data.referenceCode);
-      setCurrentStep(4); // Confirmed view
-      confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
+      setCurrentStep(4);
+      confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
 
       if (data.gatewayPayload?.type === 'khalti' && data.gatewayPayload.paymentUrl) {
         window.location.href = data.gatewayPayload.paymentUrl;
       }
     } catch {
-      setSubmitError('A connection error occurred. Please try again.');
+      setSubmitError('A network error occurred. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const selectedCommittee = committees.find((c) => c.id === selectedCommitteeId);
-  const selectedCountry = committeeCountries.find((c) => c.country.id === selectedCountryId)?.country;
 
   return (
-    <div className="w-full max-w-2xl mx-auto p-4 sm:p-6">
+    <div className="w-full max-w-2xl mx-auto p-4 sm:p-6 text-white">
       {/* Step Indicators */}
       <div className="flex items-center justify-between mb-8 max-w-md mx-auto">
         {[
@@ -230,21 +281,21 @@ export function MultiStepForm({ settings, committees }: MultiStepFormProps) {
           const isCurrent = currentStep === item.step;
 
           return (
-            <div key={item.step} className="flex items-center space-x-1.5 text-xs">
+            <div key={item.step} className="flex items-center space-x-2 text-xs">
               <span
-                className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[11px] ${
+                className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs transition-all ${
                   isDone
-                    ? 'bg-[#C9A96E] text-[#07111F]'
+                    ? 'bg-emerald-500 text-black shadow-[0_0_10px_rgba(16,185,129,0.3)]'
                     : isCurrent
-                    ? 'bg-[#101E33] border border-[#C9A96E] text-[#C9A96E]'
-                    : 'bg-[#0B1728] text-[#8B95A5] border border-[#1F304B]'
+                    ? 'bg-[#0F172A] border-2 border-[#38BDF8] text-[#38BDF8] shadow-[0_0_12px_rgba(56,189,248,0.3)]'
+                    : 'bg-[#0A0D14] text-[#64748B] border border-[#1C2331]'
                 }`}
               >
                 {item.step}
               </span>
               <span
-                className={`font-medium ${
-                  isCurrent ? 'text-[#C9A96E]' : isDone ? 'text-[#F6F2E9]' : 'text-[#8B95A5]'
+                className={`font-semibold tracking-wide ${
+                  isCurrent ? 'text-[#38BDF8]' : isDone ? 'text-white' : 'text-[#64748B]'
                 }`}
               >
                 {item.label}
@@ -255,92 +306,92 @@ export function MultiStepForm({ settings, committees }: MultiStepFormProps) {
       </div>
 
       {submitError && (
-        <div className="mb-6 p-3.5 rounded bg-red-950/80 border border-red-500/40 text-red-200 text-xs flex items-center space-x-2">
-          <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+        <div className="mb-6 p-4 rounded-2xl bg-rose-950/60 border border-rose-500/50 text-rose-200 text-xs flex items-center space-x-2.5">
+          <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
           <span>{submitError}</span>
         </div>
       )}
 
       {/* STEP 1: Personal Details */}
       {currentStep === 1 && (
-        <div className="p-6 rounded-xl bg-[#0B1728] border border-[#1F304B] space-y-5">
-          <div className="border-b border-[#1F304B] pb-3">
-            <h2 className="font-serif text-xl font-bold text-[#F6F2E9]">
-              Delegate Details
+        <div className="p-6 sm:p-8 rounded-3xl bg-[#0A0D14] border border-[#1C2331] shadow-[0_0_30px_rgba(0,0,0,0.8)] space-y-5">
+          <div className="border-b border-[#1C2331] pb-4">
+            <h2 className="text-xl sm:text-2xl font-extrabold text-white">
+              Delegate Registration
             </h2>
-            <p className="text-xs text-[#8B95A5]">
-              Fluorescent Secondary School • Limited to 30 delegates
+            <p className="text-xs text-[#94A3B8] mt-1">
+              Fluorescent Secondary School • Strictly capped at 30 delegates
             </p>
           </div>
 
           <div className="space-y-4 text-xs">
             <div>
-              <label className="font-medium text-[#F6F2E9] block mb-1">Your Full Name *</label>
+              <label className="font-semibold text-[#CBD5E1] block mb-1.5">Your Full Name *</label>
               <input
                 type="text"
                 required
-                placeholder="e.g. Aarav Sharma"
+                placeholder="e.g., Aarav Sharma"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-3 py-2.5 rounded bg-[#101E33] border border-[#1F304B] text-xs text-[#F6F2E9] focus:outline-none focus:border-[#C9A96E]"
+                className="w-full px-4 py-2.5 rounded-xl bg-[#03060B] border border-[#1C2331] text-xs text-white placeholder-[#475569] focus:outline-none focus:border-[#38BDF8]"
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="font-medium text-[#F6F2E9] block mb-1">Faculty / Stream *</label>
+                <label className="font-semibold text-[#CBD5E1] block mb-1.5">Faculty / Stream *</label>
                 <select
                   value={faculty}
                   onChange={(e) => setFaculty(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded bg-[#101E33] border border-[#1F304B] text-xs text-[#F6F2E9] focus:outline-none focus:border-[#C9A96E]"
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#03060B] border border-[#1C2331] text-xs text-white focus:outline-none focus:border-[#38BDF8]"
                 >
                   <option value="+2 Science">+2 Science</option>
                   <option value="+2 Management">+2 Management</option>
                   <option value="Grade 10 (SEE)">Grade 10 (SEE)</option>
-                  <option value="A-Levels / Other">A-Levels / Other</option>
+                  <option value="Other">Other</option>
                 </select>
               </div>
 
               <div>
-                <label className="font-medium text-[#F6F2E9] block mb-1">Institution / School *</label>
+                <label className="font-semibold text-[#CBD5E1] block mb-1.5">Institution / Campus *</label>
                 <input
                   type="text"
                   required
                   value={institution}
                   onChange={(e) => setInstitution(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded bg-[#101E33] border border-[#1F304B] text-xs text-[#F6F2E9] focus:outline-none focus:border-[#C9A96E]"
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#03060B] border border-[#1C2331] text-xs text-white focus:outline-none focus:border-[#38BDF8]"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="font-medium text-[#F6F2E9] block mb-1">Phone (+977) *</label>
+                <label className="font-semibold text-[#CBD5E1] block mb-1.5">Phone (+977) *</label>
                 <input
                   type="tel"
                   required
                   placeholder="98XXXXXXXX"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded bg-[#101E33] border border-[#1F304B] text-xs text-[#F6F2E9] focus:outline-none focus:border-[#C9A96E]"
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#03060B] border border-[#1C2331] text-xs text-white placeholder-[#475569] focus:outline-none focus:border-[#38BDF8]"
                 />
               </div>
 
               <div>
-                <label className="font-medium text-[#F6F2E9] block mb-1">Email Address *</label>
+                <label className="font-semibold text-[#CBD5E1] block mb-1.5">Email Address *</label>
                 <input
                   type="email"
                   required
                   placeholder="name@gmail.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded bg-[#101E33] border border-[#1F304B] text-xs text-[#F6F2E9] focus:outline-none focus:border-[#C9A96E]"
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#03060B] border border-[#1C2331] text-xs text-white placeholder-[#475569] focus:outline-none focus:border-[#38BDF8]"
                 />
               </div>
             </div>
           </div>
 
-          <div className="pt-3 flex justify-end">
+          <div className="pt-4 flex justify-end">
             <button
               type="button"
               onClick={() => {
@@ -351,7 +402,7 @@ export function MultiStepForm({ settings, committees }: MultiStepFormProps) {
                 setSubmitError(null);
                 setCurrentStep(2);
               }}
-              className="px-5 py-2.5 rounded bg-[#C9A96E] hover:bg-[#DFCA9B] text-[#07111F] font-bold text-xs uppercase tracking-wider flex items-center space-x-2"
+              className="px-6 py-2.5 rounded-full bg-white hover:bg-[#F1F5F9] text-black font-bold text-xs uppercase tracking-wider flex items-center space-x-2 transition-all shadow-[0_0_15px_rgba(255,255,255,0.2)]"
             >
               <span>Next: Committee & Country</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -360,22 +411,22 @@ export function MultiStepForm({ settings, committees }: MultiStepFormProps) {
         </div>
       )}
 
-      {/* STEP 2: Committee & Country (Combined inside the form!) */}
+      {/* STEP 2: Committee & Typed Country with Anti-Duplicate Validation */}
       {currentStep === 2 && (
-        <div className="p-6 rounded-xl bg-[#0B1728] border border-[#1F304B] space-y-6">
-          <div className="border-b border-[#1F304B] pb-3">
-            <h2 className="font-serif text-xl font-bold text-[#F6F2E9]">
-              Choose Committee & Country
+        <div className="p-6 sm:p-8 rounded-3xl bg-[#0A0D14] border border-[#1C2331] shadow-[0_0_30px_rgba(0,0,0,0.8)] space-y-6">
+          <div className="border-b border-[#1C2331] pb-4">
+            <h2 className="text-xl sm:text-2xl font-extrabold text-white">
+              Committee & Country Preference
             </h2>
-            <p className="text-xs text-[#8B95A5]">
-              Pick your council and select or randomly generate an available country.
+            <p className="text-xs text-[#94A3B8] mt-1">
+              Select your committee directly below, then type in your country.
             </p>
           </div>
 
-          {/* Committee Choice Cards */}
+          {/* 1. Committee Choice in the Form */}
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-[#F6F2E9] uppercase tracking-wider">
-              1. Select Your Committee
+            <label className="text-xs font-semibold text-[#CBD5E1] uppercase tracking-wider block">
+              1. Choose Committee
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {committees.map((comm) => {
@@ -383,105 +434,126 @@ export function MultiStepForm({ settings, committees }: MultiStepFormProps) {
                 return (
                   <div
                     key={comm.id}
-                    onClick={() => {
-                      setSelectedCommitteeId(comm.id);
-                      setSelectedCountryId(null);
-                      setAllocationId(null);
-                      setReservationToken(null);
-                      setReservationExpiry(null);
-                    }}
-                    className={`p-3.5 rounded-lg cursor-pointer border text-xs transition-all ${
+                    onClick={() => handleCommitteeChange(comm.id)}
+                    className={`p-4 rounded-2xl cursor-pointer border text-xs transition-all ${
                       isSelected
-                        ? 'bg-[#101E33] border-[#C9A96E]'
-                        : 'bg-[#07111F] border-[#1F304B] hover:border-[#1F304B]/80'
+                        ? 'bg-[#0F172A] border-[#38BDF8] shadow-[0_0_15px_rgba(56,189,248,0.2)]'
+                        : 'bg-[#03060B] border-[#1C2331] hover:border-[#272E3B]'
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-sm text-[#C9A96E]">{comm.acronym}</span>
-                      <span className="text-[10px] text-[#8B95A5]">{comm.capacity} delegates max</span>
+                      <span className="font-extrabold text-base text-[#38BDF8]">{comm.acronym}</span>
+                      <span className="text-[10px] text-[#64748B]">{comm.capacity} delegates max</span>
                     </div>
-                    <div className="font-medium text-[#F6F2E9] mt-1">{comm.name}</div>
+                    <div className="font-semibold text-white mt-1">{comm.name}</div>
+                    <p className="text-[11px] text-[#94A3B8] mt-1 line-clamp-1">{comm.agenda || comm.description}</p>
                   </div>
                 );
               })}
             </div>
           </div>
 
-          {/* Country Selection (Browse or Random Pick) */}
+          {/* 2. Typed Country Input with Anti-Duplicate Validation */}
           <div className="space-y-3 pt-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-[#F6F2E9] uppercase tracking-wider">
-                2. Select Your Country
+              <label className="text-xs font-semibold text-[#CBD5E1] uppercase tracking-wider">
+                2. Type in Your Country Name
               </label>
 
-              {/* Random button */}
+              {/* Random country generator button */}
               <button
                 type="button"
                 disabled={randomizing}
                 onClick={handleGenerateRandom}
-                className="inline-flex items-center space-x-1.5 px-3 py-1 rounded bg-[#101E33] hover:bg-[#15253F] text-[#C9A96E] border border-[#C9A96E]/40 text-xs font-semibold"
+                className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-[#111622] hover:bg-[#1A2234] text-[#38BDF8] border border-[#38BDF8]/40 text-[11px] font-semibold transition-all"
               >
-                <Shuffle className={`w-3.5 h-3.5 ${randomizing ? 'animate-spin' : ''}`} />
-                <span>{randomizing ? 'Picking...' : 'Random Country'}</span>
+                <Shuffle className={`w-3 h-3 ${randomizing ? 'animate-spin' : ''}`} />
+                <span>{randomizing ? 'Assigning...' : 'Random Country'}</span>
               </button>
             </div>
 
-            {/* Currently selected country pill */}
-            {selectedCountry && (
-              <div className="p-3 rounded bg-emerald-950/60 border border-emerald-500/40 flex items-center justify-between text-xs">
-                <div className="flex items-center space-x-2">
-                  <span className="text-xl">{selectedCountry.flag_emoji || '🌐'}</span>
-                  <div>
-                    <span className="text-[10px] text-emerald-400 font-semibold uppercase">Selected</span>
-                    <p className="font-bold text-[#F6F2E9]">{selectedCountry.display_name}</p>
-                  </div>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  placeholder="e.g., Japan, Nepal, France, Brazil, Germany..."
+                  value={typedCountryInput}
+                  onChange={(e) => {
+                    setTypedCountryInput(e.target.value);
+                    if (countryCheckResult.status !== 'idle') {
+                      setCountryCheckResult({ status: 'idle' });
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleCheckAndReserveTypedCountry();
+                    }
+                  }}
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#03060B] border border-[#1C2331] text-xs text-white placeholder-[#475569] focus:outline-none focus:border-[#38BDF8]"
+                />
+              </div>
+
+              <button
+                type="button"
+                disabled={isCheckingCountry || !typedCountryInput.trim()}
+                onClick={handleCheckAndReserveTypedCountry}
+                className="px-5 py-2.5 rounded-xl bg-[#161B26] hover:bg-[#202736] text-white font-semibold text-xs border border-[#272E3B] transition-all disabled:opacity-50 flex items-center justify-center space-x-1.5"
+              >
+                <Search className="w-3.5 h-3.5" />
+                <span>{isCheckingCountry ? 'Checking...' : 'Check & Reserve'}</span>
+              </button>
+            </div>
+
+            {/* Validation Feedback Banner */}
+            {countryCheckResult.status === 'taken' && (
+              <div className="p-4 rounded-2xl bg-rose-950/70 border border-rose-500/60 text-xs text-rose-200 space-y-1">
+                <div className="flex items-center space-x-2 font-bold text-rose-300">
+                  <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                  <span>Country Already Taken</span>
                 </div>
-                {secondsRemaining > 0 && (
-                  <span className="font-mono text-[11px] text-amber-300">
-                    Held: {Math.floor(secondsRemaining / 60)}:
-                    {(secondsRemaining % 60).toString().padStart(2, '0')}
-                  </span>
-                )}
+                <p className="text-[11px] leading-relaxed text-rose-200/90">
+                  {countryCheckResult.message}
+                </p>
               </div>
             )}
 
-            {/* Country list */}
-            {loadingCountries ? (
-              <p className="text-xs text-[#8B95A5]">Loading countries...</p>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-52 overflow-y-auto pr-1">
-                {committeeCountries.map(({ country, status }) => {
-                  const isAvailable = status === 'available';
-                  const isSelected = selectedCountryId === country.id;
+            {countryCheckResult.status === 'invalid' && (
+              <div className="p-3.5 rounded-2xl bg-amber-950/60 border border-amber-500/50 text-xs text-amber-200 flex items-center space-x-2">
+                <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                <span>{countryCheckResult.message}</span>
+              </div>
+            )}
 
-                  return (
-                    <button
-                      key={country.id}
-                      type="button"
-                      disabled={!isAvailable && !isSelected}
-                      onClick={() => handleSelectCountry(country.id)}
-                      className={`p-2 rounded text-left text-xs flex items-center space-x-2 border transition-colors ${
-                        isSelected
-                          ? 'bg-[#C9A96E] text-[#07111F] font-bold border-[#C9A96E]'
-                          : isAvailable
-                          ? 'bg-[#101E33] border-[#1F304B] text-[#F6F2E9] hover:border-[#C9A96E]/40'
-                          : 'bg-[#07111F] border-[#1F304B]/30 text-[#8B95A5]/50 cursor-not-allowed opacity-50'
-                      }`}
-                    >
-                      <span>{country.flag_emoji || '🌐'}</span>
-                      <span className="truncate">{country.display_name}</span>
-                    </button>
-                  );
-                })}
+            {reservedCountry && countryCheckResult.status === 'success' && (
+              <div className="p-4 rounded-2xl bg-emerald-950/70 border border-emerald-500/60 flex items-center justify-between text-xs shadow-[0_0_20px_rgba(16,185,129,0.15)]">
+                <div className="flex items-center space-x-3">
+                  <span className="text-2xl">{reservedCountry.flag_emoji || '🌐'}</span>
+                  <div>
+                    <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">
+                      Reserved For You
+                    </span>
+                    <p className="font-extrabold text-white text-sm">{reservedCountry.display_name}</p>
+                  </div>
+                </div>
+                {secondsRemaining > 0 && (
+                  <div className="text-right">
+                    <span className="text-[10px] text-emerald-400/80 block uppercase">Hold Timer</span>
+                    <span className="font-mono text-xs font-bold text-amber-300">
+                      {Math.floor(secondsRemaining / 60)}:
+                      {(secondsRemaining % 60).toString().padStart(2, '0')}
+                    </span>
+                  </div>
+                )}
               </div>
             )}
           </div>
 
-          <div className="pt-3 flex justify-between items-center">
+          <div className="pt-4 flex justify-between items-center">
             <button
               type="button"
               onClick={() => setCurrentStep(1)}
-              className="text-xs text-[#8B95A5] hover:text-[#F6F2E9] flex items-center space-x-1"
+              className="text-xs text-[#94A3B8] hover:text-white flex items-center space-x-1"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back</span>
@@ -489,14 +561,15 @@ export function MultiStepForm({ settings, committees }: MultiStepFormProps) {
             <button
               type="button"
               onClick={() => {
-                if (!selectedCountryId || !allocationId) {
-                  setSubmitError('Please choose or randomize a country.');
+                if (!reservedCountry || !allocationId) {
+                  setSubmitError('Please type and successfully reserve a country first.');
                   return;
                 }
                 setSubmitError(null);
                 setCurrentStep(3);
               }}
-              className="px-5 py-2.5 rounded bg-[#C9A96E] hover:bg-[#DFCA9B] text-[#07111F] font-bold text-xs uppercase tracking-wider flex items-center space-x-2"
+              disabled={!reservedCountry}
+              className="px-6 py-2.5 rounded-full bg-white hover:bg-[#F1F5F9] text-black font-bold text-xs uppercase tracking-wider flex items-center space-x-2 transition-all shadow-[0_0_15px_rgba(255,255,255,0.2)] disabled:opacity-40"
             >
               <span>Next: Payment</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -507,79 +580,84 @@ export function MultiStepForm({ settings, committees }: MultiStepFormProps) {
 
       {/* STEP 3: Payment & Final Submit */}
       {currentStep === 3 && (
-        <div className="p-6 rounded-xl bg-[#0B1728] border border-[#1F304B] space-y-5">
-          <div className="border-b border-[#1F304B] pb-3">
-            <h2 className="font-serif text-xl font-bold text-[#F6F2E9]">
+        <div className="p-6 sm:p-8 rounded-3xl bg-[#0A0D14] border border-[#1C2331] shadow-[0_0_30px_rgba(0,0,0,0.8)] space-y-5">
+          <div className="border-b border-[#1C2331] pb-4">
+            <h2 className="text-xl sm:text-2xl font-extrabold text-white">
               Payment & Confirmation
             </h2>
-            <p className="text-xs text-[#8B95A5]">
-              Fee: <strong className="text-[#C9A96E]">{formatNPR(settings.registration_fee)}</strong> (Includes kit, meals & after-party)
+            <p className="text-xs text-[#94A3B8] mt-1">
+              Delegate Fee: <strong className="text-white">{formatNPR(settings.registration_fee)}</strong> (Includes kit, lunches, stationery & DJ night)
             </p>
           </div>
 
-          {/* Quick Summary */}
-          <div className="p-3.5 rounded bg-[#101E33] border border-[#1F304B] text-xs grid grid-cols-2 gap-2">
+          {/* Quick Summary Card */}
+          <div className="p-4 rounded-2xl bg-[#03060B] border border-[#1C2331] text-xs grid grid-cols-2 gap-3">
             <div>
-              <span className="text-[#8B95A5]">Delegate:</span>
-              <p className="font-medium text-[#F6F2E9]">{fullName} ({faculty})</p>
+              <span className="text-[#64748B] block text-[10px] uppercase">Delegate</span>
+              <p className="font-semibold text-white">{fullName}</p>
+              <p className="text-[#94A3B8] text-[11px]">{faculty}</p>
             </div>
             <div>
-              <span className="text-[#8B95A5]">Council & Country:</span>
-              <p className="font-medium text-[#F6F2E9]">
-                {selectedCommittee?.acronym} — {selectedCountry?.display_name}
+              <span className="text-[#64748B] block text-[10px] uppercase">Council & Country</span>
+              <p className="font-semibold text-[#38BDF8]">
+                {selectedCommittee?.acronym} — {reservedCountry?.display_name}
               </p>
+              <p className="text-[#94A3B8] text-[11px]">{reservedCountry?.code || 'UN Member'}</p>
             </div>
           </div>
 
           {/* Payment Method Selector */}
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-[#F6F2E9] uppercase tracking-wider block">
-              How will you pay?
+            <label className="text-xs font-semibold text-[#CBD5E1] uppercase tracking-wider block">
+              Payment Method
             </label>
-            <div className="grid grid-cols-3 gap-2 text-xs">
+            <div className="grid grid-cols-3 gap-2.5 text-xs">
               <button
                 type="button"
                 onClick={() => setPaymentMethod('physical')}
-                className={`p-3 rounded border text-center transition-all ${
+                className={`p-3.5 rounded-2xl border text-center transition-all ${
                   paymentMethod === 'physical'
-                    ? 'bg-[#101E33] border-[#C9A96E] font-bold text-[#F6F2E9]'
-                    : 'bg-[#07111F] border-[#1F304B] text-[#8B95A5]'
+                    ? 'bg-[#0F172A] border-[#38BDF8] font-bold text-white shadow-[0_0_12px_rgba(56,189,248,0.2)]'
+                    : 'bg-[#03060B] border-[#1C2331] text-[#94A3B8] hover:border-[#272E3B]'
                 }`}
               >
-                Cash at School
+                <div className="font-bold">Cash at Desk</div>
+                <div className="text-[10px] text-[#64748B] mt-0.5">Administration</div>
               </button>
 
               <button
                 type="button"
                 onClick={() => setPaymentMethod('esewa')}
-                className={`p-3 rounded border text-center transition-all ${
+                className={`p-3.5 rounded-2xl border text-center transition-all ${
                   paymentMethod === 'esewa'
-                    ? 'bg-[#101E33] border-emerald-400 font-bold text-emerald-400'
-                    : 'bg-[#07111F] border-[#1F304B] text-[#8B95A5]'
+                    ? 'bg-[#0F172A] border-emerald-400 font-bold text-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.2)]'
+                    : 'bg-[#03060B] border-[#1C2331] text-[#94A3B8] hover:border-[#272E3B]'
                 }`}
               >
-                eSewa
+                <div className="font-bold">eSewa</div>
+                <div className="text-[10px] text-[#64748B] mt-0.5">Instant Digital</div>
               </button>
 
               <button
                 type="button"
                 onClick={() => setPaymentMethod('khalti')}
-                className={`p-3 rounded border text-center transition-all ${
+                className={`p-3.5 rounded-2xl border text-center transition-all ${
                   paymentMethod === 'khalti'
-                    ? 'bg-[#101E33] border-purple-400 font-bold text-purple-400'
-                    : 'bg-[#07111F] border-[#1F304B] text-[#8B95A5]'
+                    ? 'bg-[#0F172A] border-purple-400 font-bold text-purple-400 shadow-[0_0_12px_rgba(192,132,252,0.2)]'
+                    : 'bg-[#03060B] border-[#1C2331] text-[#94A3B8] hover:border-[#272E3B]'
                 }`}
               >
-                Khalti
+                <div className="font-bold">Khalti</div>
+                <div className="text-[10px] text-[#64748B] mt-0.5">Instant Digital</div>
               </button>
             </div>
           </div>
 
-          <div className="pt-3 flex justify-between items-center">
+          <div className="pt-4 flex justify-between items-center">
             <button
               type="button"
               onClick={() => setCurrentStep(2)}
-              className="text-xs text-[#8B95A5] hover:text-[#F6F2E9] flex items-center space-x-1"
+              className="text-xs text-[#94A3B8] hover:text-white flex items-center space-x-1"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back</span>
@@ -588,7 +666,7 @@ export function MultiStepForm({ settings, committees }: MultiStepFormProps) {
               type="button"
               disabled={isSubmitting}
               onClick={handleSubmit}
-              className="px-6 py-2.5 rounded bg-[#C9A96E] hover:bg-[#DFCA9B] text-[#07111F] font-bold text-xs uppercase tracking-wider flex items-center space-x-2"
+              className="px-6 py-2.5 rounded-full bg-white hover:bg-[#F1F5F9] text-black font-bold text-xs uppercase tracking-wider flex items-center space-x-2 transition-all shadow-[0_0_15px_rgba(255,255,255,0.2)] disabled:opacity-50"
             >
               <span>{isSubmitting ? 'Registering...' : 'Confirm Registration'}</span>
               <Check className="w-4 h-4" />
@@ -599,23 +677,27 @@ export function MultiStepForm({ settings, committees }: MultiStepFormProps) {
 
       {/* STEP 4: Success Pass */}
       {currentStep === 4 && (
-        <div className="p-8 rounded-xl bg-[#0B1728] border border-[#C9A96E]/50 text-center space-y-5">
-          <div className="w-12 h-12 rounded-full bg-emerald-950 border border-emerald-500 mx-auto flex items-center justify-center text-emerald-400">
-            <CheckCircle2 className="w-6 h-6" />
+        <div className="p-8 sm:p-10 rounded-3xl bg-[#0A0D14] border border-[#1C2331] text-center space-y-6 shadow-[0_0_40px_rgba(0,0,0,0.9)]">
+          <div className="w-14 h-14 rounded-full bg-emerald-950/80 border border-emerald-500/60 mx-auto flex items-center justify-center text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.3)]">
+            <CheckCircle2 className="w-7 h-7" />
           </div>
 
           <div>
-            <h2 className="font-serif text-2xl font-bold text-[#F6F2E9]">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-white">
               Registration Confirmed!
             </h2>
-            <p className="text-xs text-[#8B95A5] mt-1">
-              You are officially registered for Fluorescent MUN 2026.
+            <p className="text-xs text-[#94A3B8] mt-1.5 max-w-sm mx-auto">
+              You are officially registered for Fluorescent MUN 2026. Keep your reference code safe.
             </p>
           </div>
 
-          <div className="p-4 rounded bg-[#101E33] border border-[#C9A96E]/30 max-w-sm mx-auto space-y-2">
-            <span className="text-[10px] text-[#8B95A5] uppercase tracking-wider">Reference Code</span>
-            <div className="font-mono text-xl font-bold text-[#C9A96E]">{confirmedReference}</div>
+          <div className="p-5 rounded-2xl bg-[#03060B] border border-[#272E3B] max-w-sm mx-auto space-y-2">
+            <span className="text-[10px] text-[#64748B] uppercase tracking-wider block">
+              Official Reference Code
+            </span>
+            <div className="font-mono text-2xl font-extrabold text-[#38BDF8]">
+              {confirmedReference}
+            </div>
             <button
               onClick={() => {
                 if (confirmedReference) {
@@ -624,23 +706,23 @@ export function MultiStepForm({ settings, committees }: MultiStepFormProps) {
                   setTimeout(() => setCopiedRef(false), 2000);
                 }
               }}
-              className="text-xs text-[#8B95A5] hover:text-[#F6F2E9] inline-flex items-center space-x-1"
+              className="text-xs text-[#94A3B8] hover:text-white inline-flex items-center space-x-1.5 transition-colors"
             >
-              {copiedRef ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-              <span>{copiedRef ? 'Copied!' : 'Copy Code'}</span>
+              {copiedRef ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copiedRef ? 'Copied to Clipboard' : 'Copy Code'}</span>
             </button>
           </div>
 
-          <div className="pt-2 flex justify-center space-x-3 text-xs">
+          <div className="pt-3 flex flex-col sm:flex-row items-center justify-center gap-3 text-xs">
             <button
               onClick={() => router.push(`/#after-party`)}
-              className="px-4 py-2 rounded bg-[#C9A96E] text-[#07111F] font-semibold"
+              className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-white text-black font-semibold hover:bg-[#F1F5F9] transition-all"
             >
               Request Party Songs
             </button>
             <button
               onClick={() => router.push('/')}
-              className="px-4 py-2 rounded bg-[#101E33] text-[#F6F2E9] border border-[#1F304B]"
+              className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[#111622] text-[#E2E8F0] border border-[#272E3B] hover:text-white transition-all"
             >
               Back to Home
             </button>

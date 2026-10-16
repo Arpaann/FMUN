@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, HelpCircle } from 'lucide-react';
 import { FAQ } from '@/types/database';
 
 const STUDENT_FAQS = [
@@ -21,7 +21,7 @@ const STUDENT_FAQS = [
     id: 'faq-3',
     question: 'How do I choose my committee and country?',
     answer:
-      'You select your committee (e.g. UNGA or UNSC) and your country directly in the registration form. You can pick an available country or hit "Random Country" for an instant assignment.',
+      'You select your committee (e.g. UNGA or UNSC) and type your desired country directly in the registration form. The system will instantly check availability and reserve it for you.',
   },
   {
     id: 'faq-4',
@@ -41,17 +41,17 @@ export function FaqSection({ faqs }: { faqs?: FAQ[] }) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <section className="py-16 bg-[#07111F] border-b border-[#1F304B]">
+    <section className="py-20 bg-[#000000] border-b border-[#1C1F26] text-white">
       <div className="max-w-3xl mx-auto px-4 sm:px-6">
         <div className="text-center space-y-2 mb-10">
-          <span className="text-xs uppercase tracking-widest text-[#C9A96E] font-semibold">
-            Got Questions?
+          <span className="text-xs uppercase tracking-widest text-[#38BDF8] font-semibold">
+            Common Inquiries
           </span>
-          <h2 className="font-serif text-3xl font-bold text-[#F6F2E9]">
+          <h2 className="text-3xl font-extrabold text-white">
             Frequently Asked Questions
           </h2>
-          <p className="text-xs sm:text-sm text-[#8B95A5]">
-            Everything +2 students need to know before attending.
+          <p className="text-xs sm:text-sm text-[#94A3B8]">
+            Everything +2 Science & Management scholars need to know.
           </p>
         </div>
 
@@ -61,24 +61,24 @@ export function FaqSection({ faqs }: { faqs?: FAQ[] }) {
             return (
               <div
                 key={faq.id}
-                className="rounded-lg bg-[#0B1728] border border-[#1F304B] overflow-hidden transition-all duration-200"
+                className="rounded-2xl bg-[#0A0D14] border border-[#1C2331] overflow-hidden transition-all duration-200 hover:border-[#272E3B]"
               >
                 <button
                   onClick={() => setOpenIndex(isOpen ? null : index)}
-                  className="w-full p-4 text-left flex items-center justify-between space-x-3 hover:bg-[#101E33]/40 transition-colors"
+                  className="w-full p-4 text-left flex items-center justify-between space-x-3 transition-colors"
                   aria-expanded={isOpen}
                 >
-                  <span className="font-serif font-medium text-sm sm:text-base text-[#F6F2E9]">
+                  <span className="font-semibold text-sm sm:text-base text-white">
                     {faq.question}
                   </span>
                   <ChevronDown
-                    className={`w-4 h-4 text-[#C9A96E] shrink-0 transition-transform duration-200 ${
+                    className={`w-4 h-4 text-[#38BDF8] shrink-0 transition-transform duration-200 ${
                       isOpen ? 'rotate-180' : ''
                     }`}
                   />
                 </button>
                 {isOpen && (
-                  <div className="px-4 pb-4 pt-1 text-xs text-[#8B95A5] leading-relaxed border-t border-[#1F304B]/40">
+                  <div className="px-4 pb-4 pt-1 text-xs text-[#94A3B8] leading-relaxed border-t border-[#1C2331]">
                     {faq.answer}
                   </div>
                 )}

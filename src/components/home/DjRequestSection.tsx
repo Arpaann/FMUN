@@ -1,25 +1,21 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Music, Disc, Send, CheckCircle2, AlertCircle, Heart } from 'lucide-react';
+import { Music, Send, CheckCircle2, Headphones } from 'lucide-react';
 import { SongSubmission } from '@/types/database';
 
 export function DjRequestSection({ initialApprovedSongs = [] }: { initialApprovedSongs?: SongSubmission[] }) {
-  const [songs, setSongs] = useState<SongSubmission[]>(initialApprovedSongs);
   const [title, setTitle] = useState('');
   const [artist, setArtist] = useState('');
   const [submitterName, setSubmitterName] = useState('');
-  const [sourceUrl, setSourceUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setMessage(null);
-
-    // Default friendly link if user didn't enter one
-    const validUrl = sourceUrl.trim() || `https://open.spotify.com/search/${encodeURIComponent(title + ' ' + artist)}`;
+    setError(null);
 
     try {
       const res = await fetch('/api/songs/submit', {
@@ -27,166 +23,107 @@ export function DjRequestSection({ initialApprovedSongs = [] }: { initialApprove
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title,
-          artist,
+          artist: artist || 'Various Artists',
           sourcePlatform: 'spotify',
-          sourceUrl: validUrl,
-          submitterName: submitterName || 'Fellow Delegate',
+          sourceUrl: `https://open.spotify.com/search/${encodeURIComponent(title + ' ' + artist)}`,
+          submitterName: submitterName || 'FMUN Delegate',
         }),
       });
 
       const data = await res.json();
-
       if (data.success) {
-        setMessage({ type: 'success', text: `"${title}" has been sent straight to the DJ booth!` });
+        setSubmitted(true);
         setTitle('');
         setArtist('');
-        setSourceUrl('');
       } else {
-        setMessage({ type: 'error', text: data.message || 'Could not submit request' });
+        setError(data.message || 'Could not send song');
       }
     } catch {
-      setMessage({ type: 'error', text: 'Network error. Please try again.' });
+      setError('Network error. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <section id="after-party" className="py-20 bg-[#050D17] border-b border-[#1F304B]">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6">
-        <div className="text-center space-y-3 mb-10">
-          <span className="text-xs font-semibold uppercase tracking-widest text-[#C9A96E]">
-            Social Celebration
-          </span>
-          <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[#F6F2E9]">
-            The FMUN After-Party • DJ Booth
-          </h2>
-          <p className="text-xs sm:text-sm text-[#8B95A5] max-w-lg mx-auto">
-            After committee resolutions, celebrate with +2 friends. Drop your favorite tracks into our resident DJ’s
-            live playlist.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-          {/* Left: Quick Request Form */}
-          <div className="md:col-span-6 p-6 rounded-xl bg-[#0B1728] border border-[#1F304B] space-y-4">
-            <div className="flex items-center space-x-2.5">
-              <div className="w-8 h-8 rounded-full bg-[#101E33] border border-[#C9A96E]/40 flex items-center justify-center text-[#C9A96E]">
-                <Disc className="w-4 h-4" />
+    <section id="after-party" className="py-20 bg-[#000000] border-b border-[#1C1F26] text-white">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6">
+        <div className="p-8 rounded-3xl bg-[#0A0D14] border border-[#1C2331] shadow-[0_0_30px_rgba(0,0,0,0.8)]">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-[#1C1F26]">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-2xl bg-purple-950/60 border border-purple-500/40 flex items-center justify-center text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.2)]">
+                <Headphones className="w-5 h-5" />
               </div>
-              <h3 className="font-serif text-base font-bold text-[#F6F2E9]">
-                Drop a Track for the DJ
-              </h3>
+              <div>
+                <h3 className="text-lg font-bold text-white">FMUN After-Party DJ Track Request</h3>
+                <p className="text-xs text-[#94A3B8]">Request songs for our resident DJ’s live after-party setlist</p>
+              </div>
             </div>
+            <span className="text-[11px] font-mono font-medium px-3 py-1 rounded-full bg-purple-950/40 text-purple-300 border border-purple-800/40">
+              Day 2 • 04:30 PM
+            </span>
+          </div>
 
-            {message && (
-              <div
-                className={`p-3 rounded text-xs flex items-center space-x-2 border ${
-                  message.type === 'success'
-                    ? 'bg-emerald-950/80 border-emerald-500/40 text-emerald-300'
-                    : 'bg-red-950/80 border-red-500/40 text-red-300'
-                }`}
+          {submitted ? (
+            <div className="py-6 text-center space-y-3">
+              <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto" />
+              <p className="text-sm font-semibold text-white">Song sent to the DJ booth!</p>
+              <button
+                onClick={() => setSubmitted(false)}
+                className="text-xs text-[#38BDF8] hover:underline"
               >
-                {message.type === 'success' ? (
-                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
-                ) : (
-                  <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
-                )}
-                <span>{message.text}</span>
+                Request another track
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div className="p-3 rounded-xl bg-red-950/50 border border-red-500/40 text-xs text-red-200">
+                  {error}
+                </div>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-[#CBD5E1] mb-1">Song Title</label>
+                  <input
+                    type="text"
+                    required
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="e.g., Midnight City"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#03060B] border border-[#1C2331] text-xs text-white placeholder-[#475569] focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[#CBD5E1] mb-1">Artist Name</label>
+                  <input
+                    type="text"
+                    value={artist}
+                    onChange={(e) => setArtist(e.target.value)}
+                    placeholder="e.g., M83"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#03060B] border border-[#1C2331] text-xs text-white placeholder-[#475569] focus:outline-none focus:border-purple-500"
+                  />
+                </div>
               </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <div>
-                <label className="text-[11px] font-medium text-[#F6F2E9] uppercase tracking-wider block mb-1">
-                  Song Name *
-                </label>
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
                 <input
                   type="text"
-                  required
-                  placeholder="e.g. Starboy / A Sky Full of Stars"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-3 py-2 rounded bg-[#101E33] border border-[#1F304B] text-xs text-[#F6F2E9] focus:outline-none focus:border-[#C9A96E]"
-                />
-              </div>
-
-              <div>
-                <label className="text-[11px] font-medium text-[#F6F2E9] uppercase tracking-wider block mb-1">
-                  Artist *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. The Weeknd / Coldplay"
-                  value={artist}
-                  onChange={(e) => setArtist(e.target.value)}
-                  className="w-full px-3 py-2 rounded bg-[#101E33] border border-[#1F304B] text-xs text-[#F6F2E9] focus:outline-none focus:border-[#C9A96E]"
-                />
-              </div>
-
-              <div>
-                <label className="text-[11px] font-medium text-[#F6F2E9] uppercase tracking-wider block mb-1">
-                  Your Name (Optional)
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Aarav (+2 Science)"
                   value={submitterName}
                   onChange={(e) => setSubmitterName(e.target.value)}
-                  className="w-full px-3 py-2 rounded bg-[#101E33] border border-[#1F304B] text-xs text-[#F6F2E9] focus:outline-none focus:border-[#C9A96E]"
+                  placeholder="Your Name (Optional)"
+                  className="w-full sm:w-1/2 px-3.5 py-2 rounded-xl bg-[#03060B] border border-[#1C2331] text-xs text-white placeholder-[#475569] focus:outline-none focus:border-purple-500"
                 />
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-full bg-white hover:bg-[#F1F5F9] text-black font-semibold text-xs tracking-wider transition-all disabled:opacity-50 flex items-center justify-center space-x-2"
+                >
+                  <span>{isSubmitting ? 'Sending...' : 'Drop Song'}</span>
+                  <Send className="w-3.5 h-3.5" />
+                </button>
               </div>
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full py-2.5 rounded bg-[#C9A96E] hover:bg-[#DFCA9B] text-[#07111F] font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center space-x-2"
-              >
-                <Send className="w-3.5 h-3.5" />
-                <span>{isSubmitting ? 'Sending to DJ...' : 'Submit Track'}</span>
-              </button>
             </form>
-          </div>
-
-          {/* Right: DJ Setlist Preview */}
-          <div className="md:col-span-6 p-6 rounded-xl bg-[#0B1728] border border-[#1F304B] space-y-4">
-            <div className="flex items-center justify-between border-b border-[#1F304B] pb-3">
-              <h3 className="font-serif text-base font-bold text-[#F6F2E9]">
-                Live Party Playlist
-              </h3>
-              <span className="text-[10px] font-mono text-[#C9A96E] bg-[#101E33] px-2 py-0.5 rounded border border-[#C9A96E]/20">
-                Curated by Resident DJ
-              </span>
-            </div>
-
-            <p className="text-xs text-[#8B95A5]">
-              Tracks approved by our DJ for the celebration night:
-            </p>
-
-            {songs.length === 0 ? (
-              <div className="p-8 text-center rounded bg-[#101E33]/40 border border-[#1F304B] text-xs text-[#8B95A5]">
-                No tracks requested yet. Be the first to drop one!
-              </div>
-            ) : (
-              <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                {songs.map((song) => (
-                  <div
-                    key={song.id}
-                    className="p-3 rounded bg-[#101E33] border border-[#1F304B] flex items-center justify-between text-xs"
-                  >
-                    <div className="min-w-0 pr-2">
-                      <div className="font-semibold text-[#F6F2E9] truncate">{song.title}</div>
-                      <div className="text-[11px] text-[#8B95A5] truncate">{song.artist}</div>
-                    </div>
-                    <span className="text-[10px] font-mono text-[#C9A96E] shrink-0 uppercase">
-                      {song.status}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
     </section>

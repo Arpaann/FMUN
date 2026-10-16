@@ -3,6 +3,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Hero } from '@/components/home/Hero';
 import { EventsSection } from '@/components/home/EventsSection';
+import { SuggestionsSection } from '@/components/home/SuggestionsSection';
 import { ConferenceDetails } from '@/components/home/ConferenceDetails';
 import { DjRequestSection } from '@/components/home/DjRequestSection';
 import { FaqSection } from '@/components/home/FaqSection';
@@ -13,7 +14,7 @@ export default async function HomePage() {
   const approvedSongs = await db.getApprovedSongs();
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#07111F] text-[#F6F2E9]">
+    <div className="min-h-screen flex flex-col bg-[#000000] text-white">
       <Navbar registrationOpen={settings.registration_open} />
 
       <main className="flex-1">
@@ -23,9 +24,11 @@ export default async function HomePage() {
           registrationOpen={settings.registration_open}
         />
 
-        <EventsSection />
+        <EventsSection items={settings.schedule_items} />
 
         <ConferenceDetails settings={settings} />
+
+        <SuggestionsSection />
 
         <DjRequestSection initialApprovedSongs={approvedSongs} />
 
@@ -34,7 +37,6 @@ export default async function HomePage() {
 
       <Footer
         contactEmail={settings.contact_email}
-        contactPhone={settings.contact_phone}
         address={settings.address}
       />
     </div>

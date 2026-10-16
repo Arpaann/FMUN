@@ -9,6 +9,7 @@ import {
   SongSubmission,
   FAQ,
   AuditLog,
+  SuggestionSubmission,
 } from '@/types/database';
 import { generateReferenceCode, generateReservationToken, hashToken } from '../utils';
 
@@ -53,6 +54,89 @@ const DEFAULT_SETTINGS: ConferenceSettings = {
   physical_enabled: true,
   manual_transfer_enabled: true,
   song_submissions_public: true,
+  schedule_items: [
+    {
+      id: 'sch-1',
+      day: 1,
+      time: '08:30 AM - 09:30 AM',
+      title: 'Registration & Delegate Kit Distribution',
+      desc: 'Pick up your official badge, country placard, research handbook, and stationery.',
+      tag: 'Check-in',
+    },
+    {
+      id: 'sch-2',
+      day: 1,
+      time: '09:30 AM - 10:30 AM',
+      title: 'Opening Ceremony & Secretariat Welcome',
+      desc: 'Keynote address by the Principal and introduction of the Executive Board.',
+      tag: 'Plenary',
+    },
+    {
+      id: 'sch-3',
+      day: 1,
+      time: '10:30 AM - 01:00 PM',
+      title: 'Committee Session I: Agenda Setting & GSL',
+      desc: 'Roll call, setting the primary agenda, and opening statements on the General Speakers List.',
+      tag: 'Debate',
+    },
+    {
+      id: 'sch-4',
+      day: 1,
+      time: '01:00 PM - 02:00 PM',
+      title: 'Diplomatic Lunch & Networking',
+      desc: 'Lunch provided at the school cafeteria. Connect with delegates and form regional blocs.',
+      tag: 'Meal',
+    },
+    {
+      id: 'sch-5',
+      day: 1,
+      time: '02:00 PM - 04:30 PM',
+      title: 'Committee Session II: Moderated Caucus',
+      desc: 'Structured debate on working papers, sub-issues, and bloc formation.',
+      tag: 'Debate',
+    },
+    {
+      id: 'sch-6',
+      day: 2,
+      time: '09:00 AM - 11:30 AM',
+      title: 'Committee Session III: Crisis Scenario & Draft Resolutions',
+      desc: 'Urgent crisis update introduced by the Executive Board followed by operative clause drafting.',
+      tag: 'Crisis',
+    },
+    {
+      id: 'sch-7',
+      day: 2,
+      time: '11:30 AM - 01:00 PM',
+      title: 'Committee Session IV: Resolution Voting',
+      desc: 'Formal presentation of draft resolutions, amendments, and roll-call substantive voting.',
+      tag: 'Voting',
+    },
+    {
+      id: 'sch-8',
+      day: 2,
+      time: '01:00 PM - 02:00 PM',
+      title: 'Delegate Lunch & Photo Session',
+      desc: 'Lunch and committee photo session in official diplomatic attire.',
+      tag: 'Meal',
+    },
+    {
+      id: 'sch-9',
+      day: 2,
+      time: '02:30 PM - 04:00 PM',
+      title: 'Closing Plenary & Awards Ceremony',
+      desc: 'Announcement of Best Delegate, Outstanding Delegate, and Verbal Commendation certificates.',
+      tag: 'Awards',
+    },
+    {
+      id: 'sch-10',
+      day: 2,
+      time: '04:30 PM - 07:30 PM',
+      title: 'FMUN 2026 After-Party & DJ Night',
+      desc: 'Social celebration featuring our live resident DJ, student-recommended tracks, lights, and food.',
+      tag: 'Social',
+      highlight: true,
+    },
+  ],
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };
@@ -156,6 +240,7 @@ class DatabaseRepository {
   private songSubmissions: SongSubmission[] = [];
   private faqs: FAQ[] = [...SEED_FAQS];
   private auditLogs: AuditLog[] = [];
+  private suggestions: SuggestionSubmission[] = [];
 
   constructor() {
     this.initDefaultCommittees();
@@ -462,6 +547,172 @@ class DatabaseRepository {
     }
     return false;
   }
+
+  // Find or normalize country input
+  public findCountryByInput(input: string): Country | null {
+    if (!input || !input.trim()) return null;
+    const clean = input.trim().toLowerCase().replace(/^(the|republic of|kingdom of|state of)\s+/i, '');
+
+    const aliases: Record<string, string> = {
+      'usa': 'United States',
+      'us': 'United States',
+      'america': 'United States',
+      'united states of america': 'United States',
+      'uk': 'United Kingdom',
+      'britain': 'United Kingdom',
+      'great britain': 'United Kingdom',
+      'england': 'United Kingdom',
+      'uae': 'United Arab Emirates',
+      'emirates': 'United Arab Emirates',
+      'russia': 'Russia',
+      'russian federation': 'Russia',
+      'south korea': 'South Korea',
+      'republic of korea': 'South Korea',
+      'north korea': 'North Korea',
+      'dprk': 'North Korea',
+      'prc': 'China',
+      'china': 'China',
+      'turkey': 'Turkey',
+      'turkiye': 'Turkey',
+      'türkiye': 'Turkey',
+    };
+
+    const targetName = aliases[clean] || clean;
+
+    // Exact match by name, display_name, or code
+    const exact = this.countries.find(
+      (c) =>
+        c.name.toLowerCase() === targetName.toLowerCase() ||
+        c.display_name.toLowerCase() === targetName.toLowerCase() ||
+        c.code.toLowerCase() === clean
+    );
+    if (exact) return exact;
+
+    // Partial match
+    const partial = this.countries.find(
+      (c) =>
+        c.name.toLowerCase().includes(targetName.toLowerCase()) ||
+        c.display_name.toLowerCase().includes(targetName.toLowerCase())
+    );
+    if (partial) return partial;
+
+    // If it has at least 3 letters, dynamically register it as a sovereign UN country
+    if (clean.length >= 3) {
+      const formattedName = input
+        .trim()
+        .split(' ')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(' ');
+      const code = formattedName.substring(0, 2).toUpperCase();
+      const newCountry: Country = {
+        id: `c-${code.toLowerCase()}-${Date.now().toString(36).substring(2, 6)}`,
+        name: formattedName,
+        display_name: formattedName,
+        code: code,
+        flag_emoji: '🌐',
+        is_active: true,
+        created_at: new Date().toISOString(),
+      };
+      this.countries.push(newCountry);
+      return newCountry;
+    }
+
+    return null;
+  }
+
+  public async checkCountryAvailability(
+    committeeId: string,
+    countryInput: string
+  ): Promise<{
+    recognized: boolean;
+    country?: Country;
+    available?: boolean;
+    message?: string;
+  }> {
+    this.cleanExpiredHolds();
+    const country = this.findCountryByInput(countryInput);
+    if (!country) {
+      return {
+        recognized: false,
+        message: 'Country not recognized. Please check your spelling.',
+      };
+    }
+
+    // Check if this country is currently assigned or held in this committee
+    const existing = this.allocations.find(
+      (a) =>
+        a.committee_id === committeeId &&
+        a.country_id === country.id &&
+        (a.status === 'assigned' || (a.status === 'held' && new Date(a.reservation_expiry || 0) > new Date()))
+    );
+
+    if (existing) {
+      return {
+        recognized: true,
+        country,
+        available: false,
+        message: `${country.name} is already chosen or held in this committee. Please type another country.`,
+      };
+    }
+
+    return {
+      recognized: true,
+      country,
+      available: true,
+      message: `${country.name} is available!`,
+    };
+  }
+
+  public async reserveCountryByTypedName(
+    committeeId: string,
+    countryInput: string,
+    holdMinutes = 15
+  ): Promise<{
+    success: boolean;
+    country?: Country;
+    allocationId?: string;
+    token?: string;
+    expiry?: string;
+    message?: string;
+  }> {
+    const check = await this.checkCountryAvailability(committeeId, countryInput);
+    if (!check.recognized || !check.country) {
+      return { success: false, message: check.message || 'Country not recognized.' };
+    }
+    if (!check.available) {
+      return { success: false, message: check.message || 'Country is already taken in this committee.' };
+    }
+
+    // Ensure committee_country mapping exists
+    const hasCC = this.committeeCountries.some(
+      (cc) => cc.committee_id === committeeId && cc.country_id === check.country!.id
+    );
+    if (!hasCC) {
+      this.committeeCountries.push({
+        id: `cc-${committeeId}-${check.country.id}`,
+        committee_id: committeeId,
+        country_id: check.country.id,
+        status: 'available',
+        is_priority: false,
+        is_active: true,
+        created_at: new Date().toISOString(),
+      });
+    }
+
+    const res = await this.reserveCountry(committeeId, check.country.id, holdMinutes);
+    if (!res.success) {
+      return { success: false, message: res.message };
+    }
+
+    return {
+      success: true,
+      country: check.country,
+      allocationId: res.allocationId,
+      token: res.token,
+      expiry: res.expiry,
+    };
+  }
+
 
   // --------------------------------------------------------------------------
   // DELEGATE REGISTRATION & PAYMENT
@@ -853,7 +1104,48 @@ class DatabaseRepository {
   public async getAuditLogs(): Promise<AuditLog[]> {
     return [...this.auditLogs];
   }
+
+  // --------------------------------------------------------------------------
+  // SUGGESTIONS & IDEAS
+  // --------------------------------------------------------------------------
+  public async submitSuggestion(data: {
+    name: string;
+    faculty?: string;
+    category: 'agenda' | 'crisis' | 'event' | 'general';
+    title: string;
+    details: string;
+  }): Promise<SuggestionSubmission> {
+    const item: SuggestionSubmission = {
+      id: `sug-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      name: data.name,
+      faculty: data.faculty || '+2 Science',
+      stream: data.faculty || '+2 Science',
+      category: data.category,
+      title: data.title,
+      details: data.details,
+      topic: data.title,
+      idea: data.details,
+      status: 'new',
+      created_at: new Date().toISOString(),
+    };
+    this.suggestions.unshift(item);
+    return item;
+  }
+
+  public async getSuggestions(): Promise<SuggestionSubmission[]> {
+    return [...this.suggestions];
+  }
+
+  public async updateSuggestionStatus(id: string, status: 'new' | 'reviewed' | 'accepted'): Promise<boolean> {
+    const item = this.suggestions.find((s) => s.id === id);
+    if (item) {
+      item.status = status;
+      return true;
+    }
+    return false;
+  }
 }
+
 
 // Global persistent instance across Next.js re-renders in dev
 declare global {
