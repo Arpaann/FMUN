@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
+import Link from 'next/link';
+import { ArrowRight, Calendar, Music, Sparkles } from 'lucide-react';
 
 declare global {
   interface Window {
@@ -11,7 +13,11 @@ declare global {
   }
 }
 
-export default function AnimationPage() {
+interface HeroAsciiProps {
+  registrationOpen?: boolean;
+}
+
+export default function HeroAscii({ registrationOpen = true }: HeroAsciiProps) {
   useEffect(() => {
     const embedScript = document.createElement('script');
     embedScript.type = 'text/javascript';
@@ -30,18 +36,16 @@ export default function AnimationPage() {
     `;
     document.head.appendChild(embedScript);
 
-    // Add CSS to hide branding elements and crop canvas
+    // CSS to clean up canvas and hide third-party branding
     const style = document.createElement('style');
     style.textContent = `
       [data-us-project] {
         position: relative !important;
         overflow: hidden !important;
       }
-      
       [data-us-project] canvas {
         clip-path: inset(0 0 10% 0) !important;
       }
-      
       [data-us-project] * {
         pointer-events: none !important;
       }
@@ -62,28 +66,25 @@ export default function AnimationPage() {
     `;
     document.head.appendChild(style);
 
-    // Function to aggressively hide branding
     const hideBranding = () => {
-      // Target all possible UnicornStudio containers
       const selectors = [
         '[data-us-project]',
         '[data-us-project="OMzqyUv6M3kSnv0JeAtC"]',
         '.unicorn-studio-container',
-        'canvas[aria-label*="Unicorn"]'
+        'canvas[aria-label*="Unicorn"]',
       ];
-      
-      selectors.forEach(selector => {
+
+      selectors.forEach((selector) => {
         const containers = document.querySelectorAll(selector);
-        containers.forEach(container => {
-          // Find and remove any elements containing branding text
+        containers.forEach((container) => {
           const allElements = container.querySelectorAll('*');
-          allElements.forEach(el => {
+          allElements.forEach((el) => {
             const text = (el.textContent || '').toLowerCase();
             const title = (el.getAttribute('title') || '').toLowerCase();
             const href = (el.getAttribute('href') || '').toLowerCase();
-            
+
             if (
-              text.includes('made with') || 
+              text.includes('made with') ||
               text.includes('unicorn') ||
               title.includes('made with') ||
               title.includes('unicorn') ||
@@ -97,27 +98,28 @@ export default function AnimationPage() {
               htmlEl.style.position = 'absolute';
               htmlEl.style.left = '-9999px';
               htmlEl.style.top = '-9999px';
-              // Also try to remove it
-              try { el.remove(); } catch(e) {}
+              try {
+                el.remove();
+              } catch {}
             }
           });
         });
       });
     };
 
-    // Run immediately and more frequently
     hideBranding();
-    const interval = setInterval(hideBranding, 50); // More frequent checks
-    
-    // Also try after delays
-    setTimeout(hideBranding, 500);
-    setTimeout(hideBranding, 1000);
-    setTimeout(hideBranding, 2000);
-    setTimeout(hideBranding, 5000);
-    setTimeout(hideBranding, 10000);
+    const interval = setInterval(hideBranding, 100);
+
+    const timeouts = [
+      setTimeout(hideBranding, 500),
+      setTimeout(hideBranding, 1000),
+      setTimeout(hideBranding, 2000),
+      setTimeout(hideBranding, 5000),
+    ];
 
     return () => {
       clearInterval(interval);
+      timeouts.forEach((t) => clearTimeout(t));
       if (embedScript.parentNode) {
         document.head.removeChild(embedScript);
       }
@@ -128,126 +130,168 @@ export default function AnimationPage() {
   }, []);
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-black">
-      {/* Background Animation */}
-      <div className="absolute inset-0 w-full h-full hidden lg:block">
-        <div 
-          data-us-project="OMzqyUv6M3kSnv0JeAtC" 
+    <section className="relative min-h-[92vh] lg:min-h-screen overflow-hidden bg-black text-white flex flex-col justify-between">
+      {/* 3D ASCII Background Canvas (desktop) */}
+      <div className="absolute inset-0 w-full h-full hidden lg:block opacity-90">
+        <div
+          data-us-project="OMzqyUv6M3kSnv0JeAtC"
           style={{ width: '100%', height: '100%', minHeight: '100vh' }}
         />
       </div>
 
-      {/* Mobile stars background */}
-      <div className="absolute inset-0 w-full h-full lg:hidden stars-bg"></div>
+      {/* Responsive starfield background for mobile/tablet fallback */}
+      <div className="absolute inset-0 w-full h-full lg:hidden stars-bg opacity-40 pointer-events-none" />
 
-      {/* Top Header */}
-      <div className="absolute top-0 left-0 right-0 z-20 border-b border-white/20">
-        <div className="container mx-auto px-4 lg:px-8 py-3 lg:py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 lg:gap-4">
-            <div className="font-mono text-white text-xl lg:text-2xl font-bold tracking-widest italic transform -skew-x-12">
-              UIMIX
-            </div>
-            <div className="h-3 lg:h-4 w-px bg-white/40"></div>
-            <span className="text-white/60 text-[8px] lg:text-[10px] font-mono">EST. 2025</span>
+      {/* Subtle top cyan ambient glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[260px] bg-cyan-500/10 blur-[120px] pointer-events-none" />
+
+      {/* Top Header / Status bar */}
+      <div className="relative z-20 border-b border-white/10 bg-black/40 backdrop-blur-md">
+        <div className="container mx-auto px-4 lg:px-8 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="font-mono text-white text-lg lg:text-xl font-bold tracking-widest italic transform -skew-x-6 text-cyan-400">
+              FMUN 2026
+            </span>
+            <div className="h-4 w-px bg-white/20" />
+            <span className="text-white/70 text-[10px] lg:text-xs font-mono uppercase tracking-wider">
+              Fluorescent Secondary School
+            </span>
           </div>
-          
-          <div className="hidden lg:flex items-center gap-3 text-[10px] font-mono text-white/60">
-            <span>LAT: 37.7749°</span>
-            <div className="w-1 h-1 bg-white/40 rounded-full"></div>
-            <span>LONG: 122.4194°</span>
+
+          <div className="flex items-center gap-3 text-[10px] lg:text-xs font-mono text-white/60">
+            <span className="hidden sm:inline">KATHMANDU, NEPAL</span>
+            <div className="hidden sm:block w-1 h-1 bg-cyan-400 rounded-full" />
+            <span className="px-2 py-0.5 rounded border border-cyan-500/30 bg-cyan-500/10 text-cyan-300 font-semibold">
+              3-DAY EVENT
+            </span>
           </div>
         </div>
       </div>
 
       {/* Corner Frame Accents */}
-      <div className="absolute top-0 left-0 w-8 h-8 lg:w-12 lg:h-12 border-t-2 border-l-2 border-white/30 z-20"></div>
-      <div className="absolute top-0 right-0 w-8 h-8 lg:w-12 lg:h-12 border-t-2 border-r-2 border-white/30 z-20"></div>
-      <div className="absolute left-0 w-8 h-8 lg:w-12 lg:h-12 border-b-2 border-l-2 border-white/30 z-20" style={{ bottom: '5vh' }}></div>
-      <div className="absolute right-0 w-8 h-8 lg:w-12 lg:h-12 border-b-2 border-r-2 border-white/30 z-20" style={{ bottom: '5vh' }}></div>
+      <div className="pointer-events-none absolute top-12 left-4 w-8 h-8 lg:w-12 lg:h-12 border-t-2 border-l-2 border-cyan-400/40 z-20" />
+      <div className="pointer-events-none absolute top-12 right-4 w-8 h-8 lg:w-12 lg:h-12 border-t-2 border-r-2 border-cyan-400/40 z-20" />
+      <div className="pointer-events-none absolute bottom-14 left-4 w-8 h-8 lg:w-12 lg:h-12 border-b-2 border-l-2 border-cyan-400/40 z-20" />
+      <div className="pointer-events-none absolute bottom-14 right-4 w-8 h-8 lg:w-12 lg:h-12 border-b-2 border-r-2 border-cyan-400/40 z-20" />
 
-      {/* CTA Content */}
-      <div className="relative z-10 flex min-h-screen items-center justify-end pt-16 lg:pt-0" style={{ marginTop: '5vh' }}>
-        <div className="w-full lg:w-1/2 px-6 lg:px-16 lg:pr-[10%]">
-          <div className="max-w-lg relative lg:ml-auto">
-            {/* Top decorative line */}
-            <div className="flex items-center gap-2 mb-3 opacity-60">
-              <div className="w-8 h-px bg-white"></div>
-              <span className="text-white text-[10px] font-mono tracking-wider">∞</span>
-              <div className="flex-1 h-px bg-white"></div>
-            </div>
+      {/* Main Hero Content */}
+      <div className="relative z-10 flex-1 flex items-center justify-end px-4 sm:px-8 lg:px-16 py-12 lg:py-0">
+        <div className="w-full lg:w-1/2 max-w-xl lg:mr-[6%]">
+          {/* Glowing pill matching reference */}
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#031525]/90 border border-cyan-400/40 shadow-[0_0_20px_rgba(34,211,238,0.25)] mb-4">
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#22d3ee]" />
+            <span className="text-[11px] font-mono font-semibold tracking-widest text-cyan-300 uppercase">
+              MINDS IN MOTION
+            </span>
+          </div>
 
-            {/* Title with dithered accent */}
-            <div className="relative">
-              <div className="hidden lg:block absolute -right-3 top-0 bottom-0 w-1 dither-pattern opacity-40"></div>
-              <h1 className="text-2xl lg:text-5xl font-bold text-white mb-3 lg:mb-4 leading-tight font-mono tracking-wider whitespace-nowrap lg:-ml-[5%]" style={{ letterSpacing: '0.1em' }}>
-                ENDLESS PURSUIT
-              </h1>
-            </div>
+          {/* Decorative line */}
+          <div className="flex items-center gap-2 mb-3 opacity-60">
+            <div className="w-10 h-px bg-cyan-400" />
+            <span className="text-cyan-300 text-[10px] font-mono tracking-wider">#FMUN2026</span>
+            <div className="flex-1 h-px bg-white/20" />
+          </div>
 
-            {/* Decorative dots pattern - desktop only */}
-            <div className="hidden lg:flex gap-1 mb-3 opacity-40">
-              {Array.from({ length: 40 }).map((_, i) => (
-                <div key={i} className="w-0.5 h-0.5 bg-white rounded-full"></div>
-              ))}
-            </div>
+          {/* Main Title */}
+          <div className="relative mb-3">
+            <div className="hidden lg:block absolute -right-3 top-0 bottom-0 w-1 dither-pattern opacity-40" />
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold font-mono tracking-tight text-white leading-tight">
+              FLUORESCENT <span className="text-cyan-400">MUN 2026</span>
+            </h1>
+          </div>
 
-            {/* Description with subtle grid pattern */}
-            <div className="relative">
-              <p className="text-xs lg:text-base text-gray-300 mb-5 lg:mb-6 leading-relaxed font-mono opacity-80">
-                Like Sisyphus, we push forward — not despite the struggle, but because of it. Every iteration, every pixel, every line of code is our boulder.
-              </p>
-              
-              {/* Technical corner accent - desktop only */}
-              <div className="hidden lg:block absolute -left-4 top-1/2 w-3 h-3 border border-white opacity-30" style={{ transform: 'translateY(-50%)' }}>
-                <div className="absolute top-1/2 left-1/2 w-1 h-1 bg-white" style={{ transform: 'translate(-50%, -50%)' }}></div>
-              </div>
-            </div>
+          {/* Simple subtitle */}
+          <p className="text-xs sm:text-sm font-mono text-cyan-200/80 uppercase tracking-widest mb-4">
+            Grade 11 & 12 • +2 Science & Management
+          </p>
 
-            {/* Buttons with technical accents */}
-            <div className="flex flex-col lg:flex-row gap-3 lg:gap-4">
-              <button className="relative px-5 lg:px-6 py-2 lg:py-2.5 bg-transparent text-white font-mono text-xs lg:text-sm border border-white hover:bg-white hover:text-black transition-all duration-200 group">
-                <span className="hidden lg:block absolute -top-1 -left-1 w-2 h-2 border-t border-l border-white opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                <span className="hidden lg:block absolute -bottom-1 -right-1 w-2 h-2 border-b border-r border-white opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                BEGIN THE CLIMB
+          {/* Simple narrative - no AI words, no fake numbers */}
+          <p className="text-sm sm:text-base text-gray-300 mb-6 leading-relaxed font-sans font-light">
+            A focused 3-day conference for Fluorescent Secondary School students in +2 Science and Management.
+            Step into diplomacy, debate global topics, represent a country, and share your ideas.
+          </p>
+
+          {/* Buttons */}
+          <div className="flex flex-col sm:flex-row flex-wrap gap-3">
+            {registrationOpen ? (
+              <Link
+                href="/register"
+                className="relative px-6 py-3 bg-white text-black font-mono text-xs font-bold uppercase tracking-wider hover:bg-cyan-300 hover:text-black transition-all duration-200 group flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.2)]"
+              >
+                <span className="hidden lg:block absolute -top-1 -left-1 w-2 h-2 border-t border-l border-white group-hover:border-cyan-400" />
+                <span className="hidden lg:block absolute -bottom-1 -right-1 w-2 h-2 border-b border-r border-white group-hover:border-cyan-400" />
+                <span>Register as Delegate</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            ) : (
+              <button
+                disabled
+                className="px-6 py-3 bg-gray-800 text-gray-400 font-mono text-xs font-bold uppercase tracking-wider cursor-not-allowed"
+              >
+                Registration Closed
               </button>
-              
-              <button className="relative px-5 lg:px-6 py-2 lg:py-2.5 bg-transparent border border-white text-white font-mono text-xs lg:text-sm hover:bg-white hover:text-black transition-all duration-200" style={{ borderWidth: '1px' }}>
-                EMBRACE THE JOURNEY
-              </button>
-            </div>
+            )}
 
-            {/* Bottom technical notation - desktop only */}
-            <div className="hidden lg:flex items-center gap-2 mt-6 opacity-40">
-              <span className="text-white text-[9px] font-mono">∞</span>
-              <div className="flex-1 h-px bg-white"></div>
-              <span className="text-white text-[9px] font-mono">SISYPHUS.PROTOCOL</span>
+            <Link
+              href="/#events"
+              className="relative px-5 py-3 bg-black/60 border border-white/40 hover:border-cyan-400 text-white hover:text-cyan-300 font-mono text-xs font-semibold uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 backdrop-blur-sm"
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              <span>Schedule (3 Days)</span>
+            </Link>
+
+            <Link
+              href="/#party-songs"
+              className="relative px-5 py-3 bg-black/60 border border-white/20 hover:border-cyan-400/70 text-gray-300 hover:text-cyan-300 font-mono text-xs font-semibold tracking-wider transition-all duration-200 flex items-center justify-center gap-2 backdrop-blur-sm"
+            >
+              <Music className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Song Recom for Party</span>
+            </Link>
+          </div>
+
+          {/* Quick info grid */}
+          <div className="grid grid-cols-3 gap-2 mt-6 pt-5 border-t border-white/10 font-mono text-[11px]">
+            <div className="p-2 rounded bg-white/[0.03] border border-white/10">
+              <span className="text-gray-400 block text-[9px] uppercase">Duration</span>
+              <span className="text-white font-bold">3 Days</span>
+            </div>
+            <div className="p-2 rounded bg-white/[0.03] border border-white/10">
+              <span className="text-gray-400 block text-[9px] uppercase">Students</span>
+              <span className="text-cyan-300 font-bold">+2 Sci & Mgmt</span>
+            </div>
+            <div className="p-2 rounded bg-white/[0.03] border border-white/10">
+              <span className="text-gray-400 block text-[9px] uppercase">Classes</span>
+              <span className="text-white font-bold">Grade 11 & 12</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Bottom Footer */}
-      <div className="absolute left-0 right-0 z-20 border-t border-white/20 bg-black/40 backdrop-blur-sm" style={{ bottom: '5vh' }}>
-        <div className="container mx-auto px-4 lg:px-8 py-2 lg:py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3 lg:gap-6 text-[8px] lg:text-[9px] font-mono text-white/50">
-            <span className="hidden lg:inline">SYSTEM.ACTIVE</span>
-            <span className="lg:hidden">SYS.ACT</span>
-            <div className="hidden lg:flex gap-1">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="w-1 h-3 bg-white/30" style={{ height: `${Math.random() * 12 + 4}px` }}></div>
-              ))}
-            </div>
-            <span>V1.0.0</span>
+      {/* Bottom Footer / Status Line */}
+      <div className="relative z-20 border-t border-white/15 bg-black/60 backdrop-blur-md">
+        <div className="container mx-auto px-4 lg:px-8 py-2.5 flex items-center justify-between text-[9px] font-mono text-white/50">
+          <div className="flex items-center gap-3">
+            <span className="text-cyan-400 font-bold">FMUN // SYSTEM ACTIVE</span>
+            <div className="hidden sm:block h-3 w-px bg-white/20" />
+            <span className="hidden sm:inline text-white/70">
+              FLUORESCENT SECONDARY SCHOOL • BANASTHALI, KATHMANDU
+            </span>
           </div>
-          
-          <div className="flex items-center gap-2 lg:gap-4 text-[8px] lg:text-[9px] font-mono text-white/50">
-            <span className="hidden lg:inline">◐ RENDERING</span>
-            <div className="flex gap-1">
-              <div className="w-1 h-1 bg-white/60 rounded-full animate-pulse"></div>
-              <div className="w-1 h-1 bg-white/40 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-              <div className="w-1 h-1 bg-white/20 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+
+          <div className="flex items-center gap-3">
+            <span className="hidden md:inline text-cyan-300/80">3-DAY SUMMIT</span>
+            <div className="flex gap-1 items-center">
+              <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse" />
+              <div
+                className="w-1.5 h-1.5 bg-cyan-400/50 rounded-full animate-pulse"
+                style={{ animationDelay: '0.2s' }}
+              />
+              <div
+                className="w-1.5 h-1.5 bg-cyan-400/20 rounded-full animate-pulse"
+                style={{ animationDelay: '0.4s' }}
+              />
             </div>
-            <span className="hidden lg:inline">FRAME: ∞</span>
+            <span className="text-white/60">LIVE</span>
           </div>
         </div>
       </div>
@@ -255,26 +299,25 @@ export default function AnimationPage() {
       <style>{`
         .dither-pattern {
           background-image: 
-            repeating-linear-gradient(0deg, transparent 0px, transparent 1px, white 1px, white 2px),
-            repeating-linear-gradient(90deg, transparent 0px, transparent 1px, white 1px, white 2px);
+            repeating-linear-gradient(0deg, transparent 0px, transparent 1px, #22d3ee 1px, #22d3ee 2px),
+            repeating-linear-gradient(90deg, transparent 0px, transparent 1px, #22d3ee 1px, #22d3ee 2px);
           background-size: 3px 3px;
         }
         
         .stars-bg {
           background-image: 
             radial-gradient(1px 1px at 20% 30%, white, transparent),
-            radial-gradient(1px 1px at 60% 70%, white, transparent),
+            radial-gradient(1px 1px at 60% 70%, #22d3ee, transparent),
             radial-gradient(1px 1px at 50% 50%, white, transparent),
-            radial-gradient(1px 1px at 80% 10%, white, transparent),
+            radial-gradient(1px 1px at 80% 10%, #38bdf8, transparent),
             radial-gradient(1px 1px at 90% 60%, white, transparent),
             radial-gradient(1px 1px at 33% 80%, white, transparent),
-            radial-gradient(1px 1px at 15% 60%, white, transparent),
+            radial-gradient(1px 1px at 15% 60%, #22d3ee, transparent),
             radial-gradient(1px 1px at 70% 40%, white, transparent);
           background-size: 200% 200%, 180% 180%, 250% 250%, 220% 220%, 190% 190%, 240% 240%, 210% 210%, 230% 230%;
           background-position: 0% 0%, 40% 40%, 60% 60%, 20% 20%, 80% 80%, 30% 30%, 70% 70%, 50% 50%;
-          opacity: 0.3;
         }
       `}</style>
-    </main>
+    </section>
   );
 }

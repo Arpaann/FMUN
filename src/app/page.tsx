@@ -1,7 +1,7 @@
 import { db } from '@/lib/db';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
-import { Hero } from '@/components/home/Hero';
+import HeroAscii from '@/components/ui/hero-ascii-one';
 import { EventsSection } from '@/components/home/EventsSection';
 import { SuggestionsSection } from '@/components/home/SuggestionsSection';
 import { ConferenceDetails } from '@/components/home/ConferenceDetails';
@@ -18,11 +18,7 @@ export default async function HomePage() {
       <Navbar registrationOpen={settings.registration_open} />
 
       <main className="flex-1">
-        <Hero
-          tagline={settings.tagline}
-          year={settings.year}
-          registrationOpen={settings.registration_open}
-        />
+        <HeroAscii registrationOpen={settings.registration_open} />
 
         <EventsSection items={settings.schedule_items} />
 
