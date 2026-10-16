@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PAWS | Global Lost Pet Recovery & Emergency Dispatch</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel for JSX -->
+    <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        @keyframes dogRun {
+            0% {
+                transform: translateX(-140px) scaleX(1);
+            }
+
+            49% {
+                transform: translateX(calc(100vw + 140px)) scaleX(1);
+            }
+
+            50% {
+                transform: translateX(calc(100vw + 140px)) scaleX(-1);
+            }
+
+            99% {
+                transform: translateX(-140px) scaleX(-1);
+            }
+
+            100% {
+                transform: translateX(-140px) scaleX(1);
+            }
+        }
+
+        @keyframes tailWag {
+
+            0%,
+            100% {
+                transform: rotate(0deg);
+            }
+
+            50% {
+                transform: rotate(20deg);
+            }
+        }
+
+        .anim-dog-running {
+            animation: dogRun 16s infinite linear;
+        }
+
+        .anim-tail {
+            transform-origin: bottom left;
+            animation: tailWag 0.25s infinite ease-in-out;
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+
+            #printable-poster,
+            #printable-poster * {
+                visibility: visible;
+            }
+
+            #printable-poster {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                margin: 0;
+                padding: 20px;
+                box-shadow: none;
+                border: 4px solid #000;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const DEFAULT_LOGO = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='%23ffffff' stroke='%234f46e5' stroke-width='4'/%3E%3Ctext x='18' y='42' font-family='Plus Jakarta Sans' font-weight='bold' font-size='22' fill='%234f46e5' transform='rotate(-20 18 42)'%3EPAWS%3C/text%3E%3Cpath d='M60 25 C65 20, 75 25, 70 35 C75 40, 80 50, 75 65 C70 80, 50 85, 45 70 Z' fill='%234f46e5'/%3E%3C/svg%3E";
+
+        const INITIAL_DOGS = [
+            {
+                id: 'dog-1',
+                name: 'Kona',
+                breed: 'Golden Retriever',
+                age: '2.5 Years',
+                lostSince: 'June 21, 2026 - 02:15 PM',
+                location: 'Downtown Riverside Park, North Sector',
+                contact: '+1 (555) 392-8100',
+                markings: 'Small white diamond on chest, wearing a teal waterproof collar with ID tag.',
+                notes: 'Very friendly with people, but easily startled by loud sirens or heavy construction noise. Please contact dispatch immediately if sighted.',
+                rewardEnabled: true,
+                rewardAmount: '$1,500',
+                image: 'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=800&q=80',
+                status: 'Active'
+            },
+            {
+                id: 'dog-2',
+                name: 'Bruno',
+                breed: 'French Bulldog',
+                age: '1 Year',
+                lostSince: 'June 22, 2026 - 09:30 AM',
+                location: 'Metro Commercial District, Block 4',
+                contact: '+1 (555) 482-9912',
+                markings: 'Brindle coat pattern, black mask, cropped tail stub.',
+                notes: 'Requires daily maintenance medication. Microchipped and registered in the national database.',
+                rewardEnabled: true,
+                rewardAmount: '$800',
+                image: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?auto=format&fit=crop&w=800&q=80',
+                status: 'Active'
+            }
+        ];
+
+        function App() {
+            const [activeTab, setActiveTab] = useState('home');
+            const [dogs, setDogs] = useState(() => {
+                const saved = localStorage.getItem('paws_market_dogs');
+                return saved ? JSON.parse(saved) : INITIAL_DOGS;
+            });
+            const [settings, setSettings] = useState(() => {
+                const saved = localStorage.getItem('paws_market_settings');
+                return saved ? JSON.parse(saved) : {
+                    siteTitle: "PAWS Global",
+                    bannerText: "⚡ ACTIVE ALERT: Community rescue coordination active for Kona in North Sector. Check live verified feed.",
+                    phone: "+1 (800) 888-PAWS",
+                    whatsapp: "+18008887297",
+                    instagram: "https://instagram.com/pawsglobal",
+                    tiktok: "https://tiktok.com/@pawsglobal",
+                    linktree: "https://linktr.ee/pawsglobal",
+                    linkedin: "https://linkedin.com/company/pawsglobal",
+                    logoUrl: DEFAULT_LOGO,
+                    qrCodeUrl: ""
+                };
+            });
+
+            const [selectedDogForPoster, setSelectedDogForPoster] = useState(null);
+            const [adminPasswordInput, setAdminPasswordInput] = useState('');
+            const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+            const [adminLoginError, setAdminLoginError] = useState(false);
+
+            useEffect(() => {
+                localStorage.setItem('paws_market_dogs', JSON.stringify(dogs));
+            }, [dogs]);
+
+            useEffect(() => {
+                localStorage.setItem('paws_market_settings', JSON.stringify(settings));
+            }, [settings]);
+
+            useEffect(() => {
+                if (window.lucide) window.lucide.createIcons();
+            }, [activeTab, dogs, selectedDogForPoster, isAdminAuthenticated]);
+
+            return (
+                <div className="flex flex-col min-h-screen bg-slate-50 text-slate-900 font-sans">
+                    {/* TICKER BANNER */}
+                    <div className="bg-indigo-600 text-white px-4 py-2.5 text-xs font-bold flex items-center justify-between shadow-sm">
+                        <div className="flex items-center gap-2 overflow-hidden whitespace-nowrap">
+                            <i data-lucide="radio" className="w-4 h-4 inline shrink-0 animate-pulse text-indigo-200"></i>
+                            <span>{settings.bannerText}</span>
+                        </div>
+                        <button
+                            onClick={() => setActiveTab('admin')}
+                            className="bg-slate-900 text-indigo-300 px-3 py-1 rounded-lg text-xs font-black hover:bg-slate-800 transition shrink-0 ml-4 flex items-center gap-1.5 shadow"
+                        >
+                            <i data-lucide="shield-check" className="w-3.5 h-3.5"></i> Admin Portal
+                        </button>
+                    </div>
+
+                    {/* RUNNING DOG ANIMATION BAR */}
+                    <div className="w-full bg-indigo-50 border-b border-indigo-100 overflow-hidden relative h-12 flex items-center shadow-inner">
+                        <div className="absolute anim-dog-running flex items-center gap-2.5 select-none pointer-events-none">
+                            <span className="text-[10px] font-black bg-indigo-600 text-white px-2.5 py-0.5 rounded-full shadow tracking-wider uppercase">Active Search & Recovery Network</span>
+                            <div className="w-10 h-6 bg-indigo-600 rounded-2xl relative flex items-center justify-end pr-1 shadow-md">
+                                <div className="absolute -top-3 right-1.5 w-4 h-4 bg-indigo-600 rounded-full"></div>
+                                <div className="w-2.5 h-1 bg-indigo-200 rounded anim-tail"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* NAVBAR */}
+                    <header className="bg-white/90 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+                        <div className="max-w-7xl mx-auto px-4 py-3.5 flex items-center justify-between">
+                            <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTab('home')}>
+                                <img src={settings.logoUrl} alt="Logo" className="w-11 h-11 rounded-2xl object-cover border-2 border-indigo-600 shadow-sm" />
+                                <div>
+                                    <span className="text-xl font-black tracking-tight text-slate-900 block leading-none">{settings.siteTitle}</span>
+                                    <span className="text-[10px] font-extrabold tracking-widest text-indigo-600 uppercase">Emergency Response</span>
+                                </div>
+                            </div>
+
+                            <nav className="hidden md:flex items-center gap-8 font-bold text-sm text-slate-600">
+                                <button onClick={() => setActiveTab('home')} className={`transition hover:text-indigo-600 ${activeTab === 'home' ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : ''}`}>Home</button>
+                                <button onClick={() => setActiveTab('news')} className={`transition hover:text-indigo-600 ${activeTab === 'news' ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : ''}`}>Missing Feed & Posters</button>
+                                <button onClick={() => setActiveTab('report')} className={`transition hover:text-indigo-600 ${activeTab === 'report' ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : ''}`}>Report Missing Pet</button>
+                                <button onClick={() => setActiveTab('donate')} className={`transition hover:text-indigo-600 ${activeTab === 'donate' ? 'text-indigo-600 border-b-2 border-indigo-600 pb-1' : ''}`}>Rescue Fund & QR</button>
+                            </nav>
+
+                            <button
+                                onClick={() => setActiveTab('report')}
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white font-black px-5 py-2.5 rounded-2xl shadow-lg flex items-center gap-2 text-sm transition transform hover:scale-105"
+                            >
+                                <i data-lucide="plus-circle" className="w-4 h-4"></i>
+                                <span>Report Lost Dog</span>
+                            </button>
+                        </div>
+                    </header>
+
+                    {/* MOBILE BOTTOM NAVIGATION */}
+                    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-40 flex justify-around py-3 px-2 shadow-2xl">
+                        <button onClick={() => setActiveTab('home')} className={`flex flex-col items-center text-[10px] font-extrabold ${activeTab === 'home' ? 'text-indigo-600' : 'text-slate-400'}`}>
+                            <i data-lucide="home" className="w-5 h-5 mb-0.5"></i> Home
+                        </button>
+                        <button onClick={() => setActiveTab('news')} className={`flex flex-col items-center text-[10px] font-extrabold ${activeTab === 'news' ? 'text-indigo-600' : 'text-slate-400'}`}>
+                            <i data-lucide="file-text" className="w-5 h-5 mb-0.5"></i> Feed
+                        </button>
+                        <button onClick={() => setActiveTab('report')} className={`flex flex-col items-center text-[10px] font-extrabold ${activeTab === 'report' ? 'text-indigo-600' : 'text-slate-400'}`}>
+                            <i data-lucide="plus-square" className="w-5 h-5 mb-0.5"></i> Report
+                        </button>
+                        <button onClick={() => setActiveTab('donate')} className={`flex flex-col items-center text-[10px] font-extrabold ${activeTab === 'donate' ? 'text-indigo-600' : 'text-slate-400'}`}>
+                            <i data-lucide="qr-code" className="w-5 h-5 mb-0.5"></i> Fund
+                        </button>
+                    </div>
+
+                    {/* VIEW SWITCHER */}
+                    <main className="flex-grow pb-24 md:pb-12">
+                        {activeTab === 'home' && <HomeView dogs={dogs} setActiveTab={setActiveTab} setSelectedDogForPoster={setSelectedDogForPoster} settings={settings} />}
+                        {activeTab === 'news' && <NewsView dogs={dogs} setSelectedDogForPoster={setSelectedDogForPoster} />}
+                        {activeTab === 'report' && <ReportView setDogs={setDogs} setActiveTab={setActiveTab} />}
+                        {activeTab === 'donate' && <DonateView settings={settings} />}
+                        {activeTab === 'admin' && (
+                            <AdminView
+                                dogs={dogs}
+                                setDogs={setDogs}
+                                settings={settings}
+                                setSettings={setSettings}
+                                isAdminAuthenticated={isAdminAuthenticated}
+                                setIsAdminAuthenticated={setIsAdminAuthenticated}
+                                adminPasswordInput={adminPasswordInput}
+                                setAdminPasswordInput={setAdminPasswordInput}
+                                adminLoginError={adminLoginError}
+                                setAdminLoginError={setAdminLoginError}
+                            />
+                        )}
+                    </main>
+
+                    {/* POSTER MODAL */}
+                    {selectedDogForPoster && (
+                        <PosterModal dog={selectedDogForPoster} onClose={() => setSelectedDogForPoster(null)} settings={settings} />
+                    )}
+
+                    {/* FLOATING ACTION BUTTON */}
+                    {activeTab !== 'report' && (
+                        <button
+                            onClick={() => setActiveTab('report')}
+                            className="fixed right-6 bottom-20 md:bottom-8 bg-indigo-600 hover:bg-indigo-700 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center z-35 transition transform hover:scale-110 border-2 border-white"
+                            title="Report Missing Dog"
+                        >
+                            <i data-lucide="plus" className="w-8 h-8 stroke-[3]"></i>
+                        </button>
+                    )}
+
+                    {/* FOOTER */}
+                    <footer className="bg-slate-900 text-slate-300 py-12 px-4 border-t border-slate-800 mt-auto">
+                        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+                            <div>
+                                <div className="flex items-center gap-3 mb-4">
+                                    <img src={settings.logoUrl} alt="Logo" className="w-10 h-10 rounded-2xl object-cover border border-indigo-500" />
+                                    <span className="text-xl font-black text-white">{settings.siteTitle}</span>
+                                </div>
+                                <p className="text-xs text-slate-400 leading-relaxed">
+                                    Commercial-grade lost pet recovery network equipped with automated fixed poster templates, secure dispatching, and community rescue coordination.
+                                </p>
+                            </div>
+
+                            <div>
+                                <h4 className="text-white font-extrabold mb-4 uppercase tracking-wider text-xs border-l-2 border-indigo-500 pl-2">Navigation</h4>
+                                <ul className="space-y-2 text-xs font-medium">
+                                    <li><button onClick={() => setActiveTab('home')} className="hover:text-indigo-400 transition">Home Dashboard</button></li>
+                                    <li><button onClick={() => setActiveTab('news')} className="hover:text-indigo-400 transition">Missing Feed & Posters</button></li>
+                                    <li><button onClick={() => setActiveTab('report')} className="hover:text-indigo-400 transition">Report Missing Pet</button></li>
+                                    <li><button onClick={() => setActiveTab('donate')} className="hover:text-indigo-400 transition">Rescue Fund & QR</button></li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h4 className="text-white font-extrabold mb-4 uppercase tracking-wider text-xs border-l-2 border-indigo-500 pl-2">Emergency Dispatch</h4>
+                                <ul className="space-y-2 text-xs font-medium">
+                                    <li className="flex items-center gap-2"><i data-lucide="phone" className="w-4 h-4 text-indigo-400"></i> {settings.phone}</li>
+                                    <li className="flex items-center gap-2"><i data-lucide="message-square" className="w-4 h-4 text-emerald-400"></i> WhatsApp: {settings.whatsapp}</li>
+                                    <li className="flex items-center gap-2"><i data-lucide="mail" className="w-4 h-4 text-indigo-400"></i> dispatch@pawsglobal.net</li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h4 className="text-white font-extrabold mb-4 uppercase tracking-wider text-xs border-l-2 border-indigo-500 pl-2">Social Channels</h4>
+                                <div className="flex flex-wrap gap-3">
+                                    <a href={settings.instagram} target="_blank" rel="noopener noreferrer" className="bg-slate-800 p-2.5 rounded-xl hover:bg-pink-600 transition text-white shadow" title="Instagram">
+                                        <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" /></svg>
+                                    </a>
+                                    <a href={settings.tiktok} target="_blank" rel="noopener noreferrer" className="bg-slate-800 p-2.5 rounded-xl hover:bg-slate-700 transition text-white shadow" title="TikTok">
+                                        <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" /></svg>
+                                    </a>
+                                    <a href={settings.linktree} target="_blank" rel="noopener noreferrer" className="bg-slate-800 p-2.5 rounded-xl hover:bg-emerald-600 transition text-white shadow" title="Linktree">
+                                        <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M13.22 18.016v4.618h-2.44v-4.618h-4.32l5.54-6.494 5.54 6.494h-4.32zm-6.28-8.328L2.518 13.91l1.728 1.986 3.65-3.184-1.276-2.734zm10.12 0l-1.276 2.734 3.65 3.184 1.728-1.986-4.422-4.222zm-5.06-7.688L7.86 6.848l2.58 1.84V2h2.84v6.688l2.58-1.84-4.24-4.848z" /></svg>
+                                    </a>
+                                    <a href={settings.linkedin} target="_blank" rel="noopener noreferrer" className="bg-slate-800 p-2.5 rounded-xl hover:bg-blue-600 transition text-white shadow" title="LinkedIn">
+                                        <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" /></svg>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="max-w-7xl mx-auto pt-6 border-t border-slate-800 text-center text-xs text-slate-400 flex flex-col md:flex-row items-center justify-between gap-4">
+                            <p>&copy; 2026 {settings.siteTitle}. All rights reserved. Commercial Emergency Deployment.</p>
+                            <button onClick={() => setActiveTab('admin')} className="text-slate-400 hover:text-indigo-400 transition flex items-center gap-1 font-bold">
+                                <i data-lucide="shield" className="w-3.5 h-3.5"></i> Admin Portal Login
+                            </button>
+                        </div>
+                    </footer>
+                </div>
+            );
+        }
+
+        // ==================== HOME VIEW ====================
+        function HomeView({ dogs, setActiveTab, setSelectedDogForPoster, settings }) {
+            const activeDogs = dogs.filter(d => d.status === 'Active');
+
+            return (
+                <div className="space-y-12">
+                    {/* HERO */}
+                    <section className="bg-gradient-to-b from-white to-indigo-50/50 border-b border-slate-200 py-16 px-4">
+                        <div className="max-w-5xl mx-auto text-center space-y-6">
+                            <span className="bg-indigo-100 text-indigo-800 border border-indigo-200 px-4 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-widest shadow-sm">
+                                🛡️ Commercial-Grade Pet Recovery System
+                            </span>
+                            <h1 className="text-4xl md:text-6xl font-black tracking-tight text-slate-900 leading-tight">
+                                Immediate Response When Every Minute Counts.
+                            </h1>
+                            <p className="text-base md:text-lg text-slate-600 max-w-2xl mx-auto font-medium">
+                                High-performance standardized poster generation, verifiable QR donations, and instant community alerts built for maximum recovery success.
+                            </p>
+                            <div className="flex flex-wrap justify-center gap-4 pt-2">
+                                <button
+                                    onClick={() => setActiveTab('report')}
+                                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-black px-8 py-4 rounded-2xl shadow-xl transition transform hover:scale-105 flex items-center gap-2 text-base"
+                                >
+                                    <i data-lucide="plus-circle" className="w-5 h-5"></i>
+                                    Report Missing Dog
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('news')}
+                                    className="bg-white hover:bg-slate-100 text-slate-900 font-bold px-8 py-4 rounded-2xl transition border border-slate-300 shadow-sm text-base"
+                                >
+                                    View Active Feed & Posters ({activeDogs.length})
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* LIVE NEWS FRONT PAGE SECTION */}
+                    <section className="max-w-7xl mx-auto px-4">
+                        <div className="flex items-center justify-between mb-6">
+                            <div>
+                                <h2 className="text-2xl font-black text-slate-900 flex items-center gap-2">
+                                    <span className="w-3 h-3 bg-red-600 rounded-full animate-ping"></span>
+                                    Urgent Missing Dogs Feed
+                                </h2>
+                                <p className="text-xs font-semibold text-slate-500">Click any card to open the fixed template poster with download & auto-text features.</p>
+                            </div>
+                            <button onClick={() => setActiveTab('news')} className="text-indigo-600 hover:underline text-xs font-black flex items-center gap-1">
+                                View All ({activeDogs.length}) <i data-lucide="arrow-right" className="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+
+                        {activeDogs.length === 0 ? (
+                            <div className="bg-white p-12 rounded-3xl text-center border border-slate-200 shadow-sm">
+                                <i data-lucide="check-circle-2" className="w-12 h-12 text-emerald-500 mx-auto mb-3"></i>
+                                <h3 className="text-lg font-bold">All Pets Safe</h3>
+                                <p className="text-slate-500 text-xs">No active missing dogs reported currently.</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                {activeDogs.slice(0, 3).map(dog => (
+                                    <div key={dog.id} className="bg-white rounded-3xl overflow-hidden border border-slate-200 hover:border-indigo-500 transition shadow-lg flex flex-col">
+                                        <div className="relative h-60 bg-slate-100">
+                                            <img src={dog.image} alt={dog.name} className="w-full h-full object-cover" />
+                                            {dog.rewardEnabled && (
+                                                <span className="absolute top-3 left-3 bg-amber-400 text-slate-950 font-black text-xs px-3 py-1 rounded-xl shadow flex items-center gap-1">
+                                                    <i data-lucide="award" className="w-3.5 h-3.5"></i> REWARD: {dog.rewardAmount}
+                                                </span>
+                                            )}
+                                            <span className="absolute top-3 right-3 bg-red-600 text-white font-black text-xs px-3 py-1 rounded-lg uppercase shadow">
+                                                MISSING
+                                            </span>
+                                        </div>
+                                        <div className="p-5 flex-grow flex flex-col justify-between space-y-4">
+                                            <div>
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <h3 className="text-xl font-black text-slate-900">{dog.name}</h3>
+                                                    <span className="text-xs font-bold bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-lg">{dog.breed}</span>
+                                                </div>
+                                                <p className="text-xs font-semibold text-slate-500 flex items-center gap-1 mb-2">
+                                                    <i data-lucide="map-pin" className="w-3.5 h-3.5 text-indigo-600"></i> {dog.location}
+                                                </p>
+                                                <p className="text-xs text-slate-600 line-clamp-2">{dog.notes}</p>
+                                            </div>
+                                            <button
+                                                onClick={() => setSelectedDogForPoster(dog)}
+                                                className="w-full bg-slate-900 hover:bg-indigo-600 text-white font-bold py-2.5 rounded-xl transition text-xs flex items-center justify-center gap-2 shadow"
+                                            >
+                                                <i data-lucide="file-text" className="w-4 h-4"></i> View Fixed Template Poster
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </section>
+                </div>
+            );
+        }
+
+        // ==================== NEWS & INFO VIEW (POSTERS) ====================
+        function NewsView({ dogs, setSelectedDogForPoster }) {
+            const [search, setSearch] = useState('');
+            const filtered = dogs.filter(d => d.name.toLowerCase().includes(search.toLowerCase()) || d.breed.toLowerCase().includes(search.toLowerCase()) || d.location.toLowerCase().includes(search.toLowerCase()));
+
+            return (
+                <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+                    <div>
+                        <h1 className="text-3xl font-black text-slate-900">News & Fixed Template Posters</h1>
+                        <p className="text-xs font-medium text-slate-500">Every listing features a standardized fixed poster template with print/download capability and auto-generated share paragraphs.</p>
+                    </div>
+
+                    <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center">
+                        <i data-lucide="search" className="w-5 h-5 text-slate-400 ml-2"></i>
+                        <input
+                            type="text"
+                            placeholder="Search missing dogs by name, breed, location..."
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            className="w-full pl-3 pr-4 py-2 bg-transparent text-xs font-semibold text-slate-900 focus:outline-none"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {filtered.map(dog => (
+                            <div key={dog.id} className="bg-white rounded-3xl overflow-hidden border border-slate-200 hover:border-indigo-500 transition shadow-lg flex flex-col">
+                                <div className="relative h-60 bg-slate-100">
+                                    <img src={dog.image} alt={dog.name} className="w-full h-full object-cover" />
+                                    {dog.rewardEnabled && (
+                                        <span className="absolute top-3 left-3 bg-amber-400 text-slate-950 font-black text-xs px-3 py-1 rounded-xl shadow flex items-center gap-1">
+                                            <i data-lucide="award" className="w-3.5 h-3.5"></i> REWARD: {dog.rewardAmount}
+                                        </span>
+                                    )}
+                                    <span className={`absolute top-3 right-3 font-black text-xs px-3 py-1 rounded-lg uppercase shadow ${dog.status === 'Active' ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white'}`}>
+                                        {dog.status}
+                                    </span>
+                                </div>
+                                <div className="p-5 flex-grow flex flex-col justify-between space-y-4">
+                                    <div>
+                                        <div className="flex justify-between items-start mb-1">
+                                            <h3 className="text-xl font-black text-slate-900">{dog.name}</h3>
+                                            <span className="text-xs font-bold bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-lg">{dog.breed}</span>
+                                        </div>
+                                        <p className="text-xs font-semibold text-slate-500 flex items-center gap-1 mb-1">
+                                            <i data-lucide="map-pin" className="w-3.5 h-3.5 text-indigo-600"></i> {dog.location}
+                                        </p>
+                                        <p className="text-[11px] text-slate-400 mb-2">Lost Since: {dog.lostSince}</p>
+                                        <p className="text-xs text-slate-600 line-clamp-2">{dog.notes}</p>
+                                    </div>
+                                    <button
+                                        onClick={() => setSelectedDogForPoster(dog)}
+                                        className="w-full bg-slate-900 hover:bg-indigo-600 text-white font-bold py-2.5 rounded-xl transition text-xs flex items-center justify-center gap-2 shadow"
+                                    >
+                                        <i data-lucide="file-text" className="w-4 h-4"></i> View Fixed Template Poster
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        // ==================== REPORT VIEW ====================
+        function ReportView({ setDogs, setActiveTab }) {
+            const [formData, setFormData] = useState({
+                name: '',
+                breed: '',
+                age: '',
+                lostSince: '',
+                location: '',
+                contact: '',
+                markings: '',
+                notes: '',
+                rewardEnabled: false,
+                rewardAmount: '',
+                image: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=800&q=80'
+            });
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                const newDog = {
+                    id: 'dog-' + Date.now(),
+                    ...formData,
+                    status: 'Active'
+                };
+                setDogs(prev => [newDog, ...prev]);
+                alert('Lost dog reported successfully! Fixed template poster generated.');
+                setActiveTab('news');
+            };
+
+            const handleImage = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => setFormData(prev => ({ ...prev, image: reader.result }));
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            return (
+                <div className="max-w-2xl mx-auto px-4 py-8">
+                    <div className="bg-white rounded-3xl shadow-xl p-6 md:p-10 border border-slate-200 space-y-6">
+                        <div>
+                            <span className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-widest">
+                                Fixed Standard Template Form
+                            </span>
+                            <h1 className="text-2xl md:text-3xl font-black text-slate-900 mt-2">Report Missing Dog</h1>
+                            <p className="text-xs font-medium text-slate-500">All fields populate the official fixed template poster automatically.</p>
+                        </div>
+
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Dog's Name *</label>
+                                    <input type="text" required placeholder="e.g., Max" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-indigo-500 font-bold" />
+                                </div>
+                                <div>
+                                    <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Breed *</label>
+                                    <input type="text" required placeholder="e.g., German Shepherd" value={formData.breed} onChange={e => setFormData({ ...formData, breed: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-indigo-500 font-bold" />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Age *</label>
+                                    <input type="text" required placeholder="e.g., 3 Years" value={formData.age} onChange={e => setFormData({ ...formData, age: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-indigo-500 font-bold" />
+                                </div>
+                                <div>
+                                    <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Lost Since *</label>
+                                    <input type="text" required placeholder="e.g., June 22, 12:00 PM" value={formData.lostSince} onChange={e => setFormData({ ...formData, lostSince: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-indigo-500 font-bold" />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Last Seen Location *</label>
+                                <input type="text" required placeholder="e.g., Riverside Park" value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-indigo-500 font-bold" />
+                            </div>
+
+                            <div>
+                                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Contact Info *</label>
+                                <input type="text" required placeholder="e.g., +1 (555) 019-2834" value={formData.contact} onChange={e => setFormData({ ...formData, contact: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-indigo-500 font-bold" />
+                            </div>
+
+                            <div>
+                                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Distinctive Markings</label>
+                                <input type="text" placeholder="e.g., White spot on chest, blue collar" value={formData.markings} onChange={e => setFormData({ ...formData, markings: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-indigo-500 font-bold" />
+                            </div>
+
+                            <div>
+                                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Special Behavior Notes</label>
+                                <textarea rows="2" placeholder="e.g., Friendly with kids..." value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-indigo-500 font-bold"></textarea>
+                            </div>
+
+                            {/* REWARD TOGGLE */}
+                            <div className="bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100 space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <span className="font-bold text-slate-900 text-xs block">Offer Reward Section</span>
+                                        <span className="text-[10px] text-slate-500">Toggle on to add reward amount onto poster.</span>
+                                    </div>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" checked={formData.rewardEnabled} onChange={e => setFormData({ ...formData, rewardEnabled: e.target.checked })} className="sr-only peer" />
+                                        <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                                    </label>
+                                </div>
+                                {formData.rewardEnabled && (
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">Reward Amount</label>
+                                        <input type="text" placeholder="e.g., $1,000" value={formData.rewardAmount} onChange={e => setFormData({ ...formData, rewardAmount: e.target.value })} className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-black text-indigo-600 focus:outline-none" />
+                                    </div>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Dog Photo</label>
+                                <div className="flex items-center gap-4">
+                                    <img src={formData.image} alt="Preview" className="w-16 h-16 rounded-xl object-cover border border-slate-200 shadow-sm" />
+                                    <input type="file" accept="image/*" onChange={handleImage} className="text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-100 file:text-indigo-800 cursor-pointer" />
+                                </div>
+                            </div>
+
+                            <button type="submit" className="w-full bg-slate-900 hover:bg-indigo-600 text-white font-black py-4 rounded-xl shadow-lg transition text-sm flex items-center justify-center gap-2">
+                                <i data-lucide="send" className="w-4 h-4"></i> Generate Fixed Template Poster
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            );
+        }
+
+        // ==================== DONATION & QR VIEW ====================
+        function DonateView({ settings }) {
+            return (
+                <div className="max-w-3xl mx-auto px-4 py-12">
+                    <div className="bg-white rounded-3xl shadow-xl p-8 md:p-12 border border-slate-200 text-center space-y-6">
+                        <div className="inline-block bg-indigo-50 text-indigo-600 p-4 rounded-2xl border border-indigo-100 mb-2">
+                            <i data-lucide="qr-code" className="w-10 h-10"></i>
+                        </div>
+                        <h1 className="text-3xl font-black text-slate-900">Rescue Fund & Custom QR Hub</h1>
+                        <p className="text-slate-600 max-w-xl mx-auto text-xs leading-relaxed font-medium">
+                            Scan the official donation QR code below or upload your own custom QR code from the Admin Portal to receive direct community contributions.
+                        </p>
+
+                        <div className="bg-slate-50 p-6 rounded-3xl border-2 border-dashed border-indigo-200 max-w-sm mx-auto space-y-4 shadow-inner">
+                            <div className="w-48 h-48 bg-white mx-auto rounded-2xl shadow-md border border-slate-200 flex items-center justify-center overflow-hidden p-2">
+                                {settings.qrCodeUrl ? (
+                                    <img src={settings.qrCodeUrl} alt="Donation QR" className="w-full h-full object-contain" />
+                                ) : (
+                                    <div className="text-center p-4">
+                                        <i data-lucide="qr-code" className="w-16 h-16 text-slate-300 mx-auto mb-2"></i>
+                                        <p className="text-[10px] font-bold text-slate-400">No QR uploaded yet. Go to Admin Portal to upload your QR image.</p>
+                                    </div>
+                                )}
+                            </div>
+                            <span className="text-xs font-extrabold text-slate-800 block">Scan with any banking or digital wallet app</span>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // ==================== POSTER MODAL & TEMPLATE ====================
+        function PosterModal({ dog, onClose, settings }) {
+            const [copied, setCopied] = useState(false);
+            const shareableText = `🚨 URGENT MISSING DOG ALERT! 🚨 Please help find ${dog.name}! Breed: ${dog.breed}. Lost since: ${dog.lostSince} near ${dog.location}. Distinctive marks: ${dog.markings || 'None'}. ${dog.rewardEnabled ? `💰 REWARD: ${dog.rewardAmount}!` : ''} Contact immediately at ${dog.contact} or via PAWS network.`;
+
+            return (
+                <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
+                    <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col max-h-[95vh] border border-slate-200">
+                        <div className="bg-slate-900 text-white p-4 flex items-center justify-between">
+                            <div className="flex items-center gap-2.5">
+                                <img src={settings.logoUrl} alt="Logo" className="w-7 h-7 rounded-xl object-cover border border-indigo-500" />
+                                <span className="font-bold text-xs">Official Fixed Poster Template</span>
+                            </div>
+                            <button onClick={onClose} className="bg-slate-800 hover:bg-red-600 p-1.5 rounded-full text-white transition">
+                                <i data-lucide="x" className="w-4 h-4"></i>
+                            </button>
+                        </div>
+
+                        <div className="p-6 overflow-y-auto space-y-6 flex-grow">
+                            {/* FIXED TEMPLATE POSTER */}
+                            <div id="printable-poster" className="bg-amber-50 border-8 border-red-600 p-6 rounded-2xl text-slate-950 space-y-4 shadow-2xl relative">
+                                <div className="text-center space-y-1">
+                                    <span className="bg-red-600 text-white font-black text-2xl md:text-3xl px-6 py-1 rounded-xl uppercase tracking-widest inline-block shadow">
+                                        LOST DOG
+                                    </span>
+                                    <h2 className="text-3xl md:text-5xl font-black text-slate-950 pt-1">{dog.name.toUpperCase()}</h2>
+                                </div>
+
+                                <div className="relative h-64 md:h-72 rounded-xl overflow-hidden border-4 border-slate-950 shadow-md">
+                                    <img src={dog.image} alt={dog.name} className="w-full h-full object-cover" />
+                                    {dog.rewardEnabled && (
+                                        <div className="absolute bottom-0 inset-x-0 bg-amber-400 text-slate-950 font-black text-center py-2 text-lg border-t-4 border-slate-950 uppercase tracking-wide">
+                                            REWARD: {dog.rewardAmount}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="bg-white p-4 rounded-xl border-2 border-slate-950 space-y-1.5 text-xs font-bold">
+                                    <p className="flex justify-between border-b pb-1"><span className="text-slate-500">BREED:</span> <span className="text-slate-950">{dog.breed}</span></p>
+                                    <p className="flex justify-between border-b pb-1"><span className="text-slate-500">AGE:</span> <span className="text-slate-950">{dog.age}</span></p>
+                                    <p className="flex justify-between border-b pb-1"><span className="text-slate-500">LOST SINCE:</span> <span className="text-slate-950">{dog.lostSince}</span></p>
+                                    <p className="flex justify-between border-b pb-1"><span className="text-slate-500">LAST SEEN:</span> <span className="text-slate-950">{dog.location}</span></p>
+                                    <p className="flex justify-between border-b pb-1"><span className="text-slate-500">MARKS:</span> <span className="text-slate-950">{dog.markings || 'None'}</span></p>
+                                    <p className="text-slate-800 pt-1"><strong>Notes:</strong> {dog.notes}</p>
+                                </div>
+
+                                <div className="bg-red-600 text-white p-3 rounded-xl text-center font-black text-lg tracking-wide shadow">
+                                    PLEASE CALL IMMEDIATELY: <br />
+                                    <span className="text-xl text-amber-300">{dog.contact}</span>
+                                </div>
+
+                                <div className="text-center text-[10px] font-bold text-slate-500">
+                                    Verified PAWS Network &bull; {settings.siteTitle}
+                                </div>
+                            </div>
+
+                            {/* AUTO PARAGRAPH */}
+                            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-bold uppercase text-slate-500">Auto-Generated Shareable Paragraph</span>
+                                    <button onClick={() => { navigator.clipboard.writeText(shareableText); setCopied(true); setTimeout(() => setCopied(false), 2000); }} className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-extrabold px-3 py-1.5 rounded-lg transition flex items-center gap-1 shadow-sm">
+                                        <i data-lucide="copy" className="w-3.5 h-3.5"></i> {copied ? 'Copied!' : 'Copy Paragraph'}
+                                    </button>
+                                </div>
+                                <p className="text-xs text-slate-700 bg-white p-3 rounded-xl border border-slate-200 italic leading-relaxed">
+                                    "{shareableText}"
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="bg-slate-100 p-4 border-t border-slate-200 flex justify-end">
+                            <button onClick={() => window.print()} className="bg-slate-900 hover:bg-slate-800 text-white font-extrabold px-5 py-2.5 rounded-xl text-xs flex items-center gap-2 transition shadow">
+                                <i data-lucide="printer" className="w-4 h-4"></i> Print / Download Poster
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // ==================== ADMIN VIEW (GUARANTEED VISIBILITY) ====================
+        function AdminView({ dogs, setDogs, settings, setSettings, isAdminAuthenticated, setIsAdminAuthenticated, adminPasswordInput, setAdminPasswordInput, adminLoginError, setAdminLoginError }) {
+
+            const handleLogin = (e) => {
+                e.preventDefault();
+                if (adminPasswordInput === 'PAWS_Admin@2026!') {
+                    setIsAdminAuthenticated(true);
+                    setAdminLoginError(false);
+                } else {
+                    setAdminLoginError(true);
+                }
+            };
+
+            const handleDelete = (id) => {
+                if (confirm('Delete this dog listing?')) {
+                    setDogs(prev => prev.filter(d => d.id !== id));
+                }
+            };
+
+            const handleToggle = (id) => {
+                setDogs(prev => prev.map(d => d.id === id ? { ...d, status: d.status === 'Active' ? 'Resolved' : 'Active' } : d));
+            };
+
+            const handleLogo = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => setSettings(prev => ({ ...prev, logoUrl: reader.result }));
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            const handleQR = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => setSettings(prev => ({ ...prev, qrCodeUrl: reader.result }));
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            if (!isAdminAuthenticated) {
+                return (
+                    <div className="max-w-md mx-auto px-4 py-20">
+                        <div className="bg-white rounded-3xl shadow-2xl p-8 border border-slate-200 text-center space-y-6">
+                            <div className="bg-indigo-50 text-indigo-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto border border-indigo-100 shadow-sm">
+                                <i data-lucide="shield-check" className="w-8 h-8"></i>
+                            </div>
+                            <div>
+                                <h1 className="text-xl font-black text-slate-900">Admin Portal Authentication</h1>
+                                <p className="text-slate-500 text-xs">Enter your password to unlock full zero-code site customization.</p>
+                            </div>
+
+                            <form onSubmit={handleLogin} className="space-y-4">
+                                <input
+                                    type="password"
+                                    placeholder="Enter Admin Password"
+                                    value={adminPasswordInput}
+                                    onChange={e => setAdminPasswordInput(e.target.value)}
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-center font-bold tracking-widest text-slate-900 text-xs focus:outline-none focus:border-indigo-500 shadow-inner"
+                                />
+                                {adminLoginError && <p className="text-red-500 text-[11px] font-bold">Incorrect password. Default: PAWS_Admin@2026!</p>}
+                                <button type="submit" className="w-full bg-slate-900 hover:bg-indigo-600 text-white font-black py-3.5 rounded-xl transition text-xs shadow-md">
+                                    Authenticate Portal
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="max-w-7xl mx-auto px-4 py-8 space-y-12 bg-slate-50 min-h-screen">
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+                        <div>
+                            <h1 className="text-2xl font-black text-slate-900 flex items-center gap-2">
+                                <i data-lucide="sliders" className="w-7 h-7 text-indigo-600"></i> Admin Control Center
+                            </h1>
+                            <p className="text-xs font-semibold text-slate-500">Configure global titles, ticker announcements, contact numbers, logo, and donation QR instantly.</p>
+                        </div>
+                        <button onClick={() => setIsAdminAuthenticated(false)} className="bg-red-100 hover:bg-red-200 text-red-700 font-bold px-4 py-2 rounded-xl text-xs transition shadow-sm">
+                            Lock Admin
+                        </button>
+                    </div>
+
+                    {/* GLOBAL CONFIGS */}
+                    <div className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200 shadow-sm space-y-6">
+                        <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                            <i data-lucide="layout" className="w-5 h-5 text-indigo-600"></i> Global Content & Branding Manager
+                        </h2>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Platform Title</label>
+                                <input type="text" value={settings.siteTitle} onChange={e => setSettings({ ...settings, siteTitle: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-indigo-500" />
+                            </div>
+                            <div>
+                                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Ticker Banner Announcement</label>
+                                <input type="text" value={settings.bannerText} onChange={e => setSettings({ ...settings, bannerText: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-indigo-500" />
+                            </div>
+                            <div>
+                                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Phone Number</label>
+                                <input type="text" value={settings.phone} onChange={e => setSettings({ ...settings, phone: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-indigo-500" />
+                            </div>
+                            <div>
+                                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">WhatsApp</label>
+                                <input type="text" value={settings.whatsapp} onChange={e => setSettings({ ...settings, whatsapp: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-indigo-500" />
+                            </div>
+                            <div>
+                                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Instagram URL</label>
+                                <input type="text" value={settings.instagram} onChange={e => setSettings({ ...settings, instagram: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-indigo-500" />
+                            </div>
+                            <div>
+                                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">TikTok URL</label>
+                                <input type="text" value={settings.tiktok} onChange={e => setSettings({ ...settings, tiktok: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-indigo-500" />
+                            </div>
+                        </div>
+
+                        {/* LOGO & QR UPLOADERS */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100">
+                            <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                                <div className="flex items-center gap-3">
+                                    <img src={settings.logoUrl} alt="Logo" className="w-12 h-12 rounded-xl object-cover border border-slate-300 shadow-sm" />
+                                    <div>
+                                        <h4 className="text-xs font-bold text-slate-900">Brand Logo</h4>
+                                        <p className="text-[10px] text-slate-500">Update global site logo</p>
+                                    </div>
+                                </div>
+                                <input type="file" accept="image/*" onChange={handleLogo} className="text-[10px] text-slate-500 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:font-bold file:bg-indigo-600 file:text-white cursor-pointer" />
+                            </div>
+
+                            <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-12 h-12 bg-white rounded-xl border border-slate-300 shadow-sm flex items-center justify-center overflow-hidden">
+                                        {settings.qrCodeUrl ? <img src={settings.qrCodeUrl} alt="QR" className="w-full h-full object-contain" /> : <i data-lucide="qr-code" className="w-6 h-6 text-slate-400"></i>}
+                                    </div>
+                                    <div>
+                                        <h4 className="text-xs font-bold text-slate-900">Donation QR Code</h4>
+                                        <p className="text-[10px] text-slate-500">Upload payment QR image</p>
+                                    </div>
+                                </div>
+                                <input type="file" accept="image/*" onChange={handleQR} className="text-[10px] text-slate-500 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:font-bold file:bg-indigo-600 file:text-white cursor-pointer" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* MANAGE DOGS */}
+                    <div className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200 shadow-sm space-y-6">
+                        <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                            <i data-lucide="database" className="w-5 h-5 text-indigo-600"></i> Manage Lost Dog Reports ({dogs.length})
+                        </h2>
+
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-xs">
+                                <thead className="bg-slate-50 text-slate-600 font-extrabold uppercase border-b border-slate-200">
+                                    <tr>
+                                        <th className="p-3">Dog</th>
+                                        <th className="p-3">Breed</th>
+                                        <th className="p-3">Location</th>
+                                        <th className="p-3">Status</th>
+                                        <th className="p-3 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 font-medium">
+                                    {dogs.map(dog => (
+                                        <tr key={dog.id} className="hover:bg-slate-50">
+                                            <td className="p-3 flex items-center gap-3">
+                                                <img src={dog.image} alt="" className="w-9 h-9 rounded-lg object-cover border" />
+                                                <span className="font-bold text-slate-900">{dog.name}</span>
+                                            </td>
+                                            <td className="p-3 text-slate-600">{dog.breed}</td>
+                                            <td className="p-3 text-slate-600">{dog.location}</td>
+                                            <td className="p-3">
+                                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${dog.status === 'Active' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                                                    {dog.status}
+                                                </span>
+                                            </td>
+                                            <td className="p-3 text-right space-x-2">
+                                                <button onClick={() => handleToggle(dog.id)} className="bg-slate-100 hover:bg-slate-200 text-slate-800 px-2.5 py-1 rounded-lg text-[10px] font-bold">
+                                                    Toggle
+                                                </button>
+                                                <button onClick={() => handleDelete(dog.id)} className="bg-red-600 hover:bg-red-500 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold">
+                                                    Delete
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+
+</html>
