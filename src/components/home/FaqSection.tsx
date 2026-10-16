@@ -15,7 +15,7 @@ const STUDENT_FAQS = [
     id: 'faq-2',
     question: 'Who is eligible to participate?',
     answer:
-      'FMUN 2026 is exclusively tailored for +2 students across Science and Management streams at Fluorescent Secondary School. The conference is strictly capped at 30 delegates to ensure high individual participation.',
+      'FMUN 2026 is exclusively tailored for +2 Science and Management students (Grades 11 and 12) at Fluorescent Secondary School.',
   },
   {
     id: 'faq-3',
@@ -27,13 +27,13 @@ const STUDENT_FAQS = [
     id: 'faq-4',
     question: 'What is the dress code for the conference?',
     answer:
-      'Formal western business attire (suit, blazer, formal shirt, formal trousers/skirt) or your official school blazer during committee sessions. Smart casual wear is permitted for the closing After-Party DJ Night.',
+      'Formal western business attire (suit, blazer, formal shirt, formal trousers/skirt) or your official school blazer during committee sessions. Smart casual wear is permitted for the closing party celebration.',
   },
   {
     id: 'faq-5',
     question: 'Are meals and delegate kits included?',
     answer:
-      'Yes! Your delegate fee covers your conference placard, research handbook, badge, stationery, meals & snacks on both days, certificates of participation/awards, and after-party admission.',
+      'Yes! Your delegate fee covers your conference placard, research handbook, badge, stationery, meals & snacks across all three days, certificates of participation/awards, and closing party admission.',
   },
 ];
 

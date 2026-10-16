@@ -46,33 +46,33 @@ export function DjRequestSection({ initialApprovedSongs = [] }: { initialApprove
   };
 
   return (
-    <section id="after-party" className="py-20 bg-[#000000] border-b border-[#1C1F26] text-white">
+    <section id="party-songs" className="py-20 bg-[#000000] border-b border-[#1C1F26] text-white">
       <div className="max-w-3xl mx-auto px-4 sm:px-6">
         <div className="p-8 rounded-3xl bg-[#0A0D14] border border-[#1C2331] shadow-[0_0_30px_rgba(0,0,0,0.8)]">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-[#1C1F26]">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 rounded-2xl bg-purple-950/60 border border-purple-500/40 flex items-center justify-center text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.2)]">
-                <Headphones className="w-5 h-5" />
+                <Music className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white">FMUN After-Party DJ Track Request</h3>
-                <p className="text-xs text-[#94A3B8]">Request songs for our resident DJ’s live after-party setlist</p>
+                <h3 className="text-lg font-bold text-white">Song Recommendations for Party</h3>
+                <p className="text-xs text-[#94A3B8]">Recommend your favorite tracks for our closing party celebration</p>
               </div>
             </div>
             <span className="text-[11px] font-mono font-medium px-3 py-1 rounded-full bg-purple-950/40 text-purple-300 border border-purple-800/40">
-              Day 2 • 04:30 PM
+              Day 3 • Closing Party
             </span>
           </div>
 
           {submitted ? (
             <div className="py-6 text-center space-y-3">
               <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto" />
-              <p className="text-sm font-semibold text-white">Song sent to the DJ booth!</p>
+              <p className="text-sm font-semibold text-white">Song recommendation received!</p>
               <button
                 onClick={() => setSubmitted(false)}
                 className="text-xs text-[#38BDF8] hover:underline"
               >
-                Request another track
+                Recommend another song
               </button>
             </div>
           ) : (

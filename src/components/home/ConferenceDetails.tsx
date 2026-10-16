@@ -31,7 +31,7 @@ export function ConferenceDetails({ settings }: { settings: ConferenceSettings }
             <p className="text-base font-bold text-white">
               {settings.start_date ? formatDiplomaticDate(settings.start_date) : 'Announcing Soon'}
             </p>
-            <p className="text-[11px] text-[#64748B]">2-day student summit</p>
+            <p className="text-[11px] text-[#64748B]">3-day student summit</p>
           </div>
 
           {/* Card 2: Venue */}
@@ -64,7 +64,7 @@ export function ConferenceDetails({ settings }: { settings: ConferenceSettings }
               <Shirt className="w-4 h-4" />
             </div>
             <h3 className="text-xs uppercase tracking-wider text-[#94A3B8] font-semibold">What&apos;s Included</h3>
-            <p className="text-base font-bold text-white">Kits, Meals & DJ Night</p>
+            <p className="text-base font-bold text-white">Kits, Meals & Party</p>
             <p className="text-[11px] text-[#64748B]">Badge, placards & certificates</p>
           </div>
         </div>

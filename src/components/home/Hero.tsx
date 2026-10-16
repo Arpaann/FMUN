@@ -62,9 +62,7 @@ export function Hero({
 
         {/* Direct, human narrative for +2 Science & Management */}
         <p className="text-sm sm:text-base md:text-lg text-[#CBD5E1] max-w-2xl mx-auto leading-relaxed font-light">
-          An intimate, high-impact diplomatic summit strictly limited to{' '}
-          <strong className="text-white font-semibold">30 delegates</strong>.
-          Tailored exclusively for Fluorescent +2 Science & Management scholars to debate, negotiate, and resolve global crises.
+          A focused 3-day diplomatic conference created exclusively for Fluorescent +2 Science & Management scholars (Grade 11 & 12).
         </p>
 
         {/* Action Buttons */}
@@ -81,34 +79,34 @@ export function Hero({
             href="/#events"
             className="w-full sm:w-auto px-7 py-3.5 rounded-full bg-[#0A0D14] hover:bg-[#111622] text-[#E2E8F0] border border-[#272E3B] font-medium text-xs uppercase tracking-wider transition-all hover:border-[#38BDF8]/40"
           >
-            <span>Conference Schedule</span>
+            <span>Conference Schedule (3 Days)</span>
           </Link>
 
           <Link
-            href="/#suggestions"
+            href="/#party-songs"
             className="w-full sm:w-auto px-6 py-3.5 rounded-full bg-[#0A0D14] hover:bg-[#111622] text-[#94A3B8] hover:text-[#38BDF8] border border-[#272E3B] font-medium text-xs tracking-wider transition-all"
           >
-            <span>💡 Submit Ideas</span>
+            <span>Song Recom for Party</span>
           </Link>
         </div>
 
         {/* 4 Feature Badges */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 max-w-xl mx-auto pt-4 text-left">
           <div className="p-2.5 rounded-xl bg-[#080B11]/80 border border-[#1C2331] backdrop-blur-sm">
-            <span className="text-[10px] text-[#64748B] block uppercase tracking-wider">Quota</span>
-            <span className="text-xs font-bold text-white">30 Delegates Max</span>
+            <span className="text-[10px] text-[#64748B] block uppercase tracking-wider">Duration</span>
+            <span className="text-xs font-bold text-white">3 Days Event</span>
           </div>
           <div className="p-2.5 rounded-xl bg-[#080B11]/80 border border-[#1C2331] backdrop-blur-sm">
-            <span className="text-[10px] text-[#64748B] block uppercase tracking-wider">Faculty</span>
-            <span className="text-xs font-bold text-white">+2 Sci & Mgmt</span>
+            <span className="text-[10px] text-[#64748B] block uppercase tracking-wider">Students</span>
+            <span className="text-xs font-bold text-white">Grades 11 & 12</span>
           </div>
           <div className="p-2.5 rounded-xl bg-[#080B11]/80 border border-[#1C2331] backdrop-blur-sm">
             <span className="text-[10px] text-[#64748B] block uppercase tracking-wider">Committees</span>
             <span className="text-xs font-bold text-white">In Form Selection</span>
           </div>
           <div className="p-2.5 rounded-xl bg-[#080B11]/80 border border-[#1C2331] backdrop-blur-sm">
-            <span className="text-[10px] text-[#64748B] block uppercase tracking-wider">Social</span>
-            <span className="text-xs font-bold text-white">Live DJ Night</span>
+            <span className="text-[10px] text-[#64748B] block uppercase tracking-wider">Celebration</span>
+            <span className="text-xs font-bold text-white">Party Songs</span>
           </div>
         </div>
       </div>

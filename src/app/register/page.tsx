@@ -20,7 +20,7 @@ export default async function RegisterPage() {
             Delegate Registration
           </h1>
           <p className="text-xs text-[#94A3B8] max-w-md mx-auto">
-            Strictly limited to 30 delegates across +2 Science & Management. Select your council and type your country below to secure your seat.
+            Exclusively for +2 Science & Management scholars (Grade 11 & 12). Select your council and type your country below to secure your seat.
           </p>
         </div>
 

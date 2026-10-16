@@ -5,7 +5,7 @@ import { Lightbulb, Send, CheckCircle2, Sparkles, MessageSquare, Flame } from 'l
 
 export function SuggestionsSection() {
   const [name, setName] = useState('');
-  const [faculty, setFaculty] = useState('+2 Science');
+  const [faculty, setFaculty] = useState('+2 Science (Grade 11)');
   const [category, setCategory] = useState<'agenda' | 'crisis' | 'event' | 'general'>('crisis');
   const [title, setTitle] = useState('');
   const [details, setDetails] = useState('');
@@ -54,8 +54,7 @@ export function SuggestionsSection() {
             Ideas & Suggestions Portal
           </h2>
           <p className="text-xs sm:text-sm text-[#94A3B8] mt-2 leading-relaxed">
-            Have a brilliant crisis scenario, an engaging debate topic, or a creative proposal for
-            the closing after-party? Submit your ideas directly to the FMUN Secretariat.
+            Have a crisis scenario, debate topic, or a song recommendation for the closing party? Submit your ideas directly to the Secretariat.
           </p>
         </div>
 
@@ -108,10 +107,10 @@ export function SuggestionsSection() {
                     onChange={(e) => setFaculty(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[#03060B] border border-[#1C2331] text-xs text-white focus:outline-none focus:border-[#38BDF8]"
                   >
-                    <option value="+2 Science">+2 Science</option>
-                    <option value="+2 Management">+2 Management</option>
-                    <option value="Executive Secretariat">Executive Secretariat</option>
-                    <option value="Other">Other</option>
+                    <option value="+2 Science (Grade 11)">+2 Science (Grade 11)</option>
+                    <option value="+2 Science (Grade 12)">+2 Science (Grade 12)</option>
+                    <option value="+2 Management (Grade 11)">+2 Management (Grade 11)</option>
+                    <option value="+2 Management (Grade 12)">+2 Management (Grade 12)</option>
                   </select>
                 </div>
               </div>
@@ -124,7 +123,7 @@ export function SuggestionsSection() {
                   {[
                     { id: 'crisis', label: 'Crisis Scenario', icon: Flame },
                     { id: 'agenda', label: 'Debate Agenda', icon: MessageSquare },
-                    { id: 'event', label: 'After-Party / Event', icon: Sparkles },
+                    { id: 'event', label: 'Party Song Idea', icon: Sparkles },
                     { id: 'general', label: 'General Idea', icon: Lightbulb },
                   ].map((cat) => {
                     const Icon = cat.icon;
@@ -157,7 +156,7 @@ export function SuggestionsSection() {
                   required
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g., Midnight Cyberattack Crisis Simulation or Retro Neon DJ Theme"
+                  placeholder="e.g., Midnight Cyberattack Crisis Simulation or Neon Party Song"
                   className="w-full px-3.5 py-2.5 rounded-xl bg-[#03060B] border border-[#1C2331] text-xs text-white placeholder-[#475569] focus:outline-none focus:border-[#38BDF8]"
                 />
               </div>

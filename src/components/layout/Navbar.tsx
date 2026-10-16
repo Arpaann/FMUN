@@ -7,10 +7,10 @@ import { Menu, X, ArrowUpRight } from 'lucide-react';
 
 const NAV_LINKS = [
   { href: '/', label: 'Home' },
-  { href: '/#events', label: 'Schedule & Events' },
+  { href: '/#events', label: 'Schedule (3 Days)' },
   { href: '/#suggestions', label: 'Ideas & Suggestions' },
-  { href: '/register', label: 'Register (30 Seats)' },
-  { href: '/#after-party', label: 'DJ Party' },
+  { href: '/register', label: 'Register' },
+  { href: '/#party-songs', label: 'Party Songs' },
 ];
 
 export function Navbar({ registrationOpen = false }: { registrationOpen?: boolean }) {

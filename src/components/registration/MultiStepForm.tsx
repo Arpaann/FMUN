@@ -42,7 +42,7 @@ export function MultiStepForm({ settings, committees }: MultiStepFormProps) {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [institution, setInstitution] = useState('Fluorescent Secondary School');
-  const [faculty, setFaculty] = useState('+2 Science');
+  const [faculty, setFaculty] = useState('+2 Science (Grade 11)');
 
   // Committee & Typed Country
   const [selectedCommitteeId, setSelectedCommitteeId] = useState(committees[0]?.id || '');
@@ -339,16 +339,16 @@ export function MultiStepForm({ settings, committees }: MultiStepFormProps) {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="font-semibold text-[#CBD5E1] block mb-1.5">Faculty / Stream *</label>
+                <label className="font-semibold text-[#CBD5E1] block mb-1.5">Faculty & Grade *</label>
                 <select
                   value={faculty}
                   onChange={(e) => setFaculty(e.target.value)}
                   className="w-full px-4 py-2.5 rounded-xl bg-[#03060B] border border-[#1C2331] text-xs text-white focus:outline-none focus:border-[#38BDF8]"
                 >
-                  <option value="+2 Science">+2 Science</option>
-                  <option value="+2 Management">+2 Management</option>
-                  <option value="Grade 10 (SEE)">Grade 10 (SEE)</option>
-                  <option value="Other">Other</option>
+                  <option value="+2 Science (Grade 11)">+2 Science (Grade 11)</option>
+                  <option value="+2 Science (Grade 12)">+2 Science (Grade 12)</option>
+                  <option value="+2 Management (Grade 11)">+2 Management (Grade 11)</option>
+                  <option value="+2 Management (Grade 12)">+2 Management (Grade 12)</option>
                 </select>
               </div>
 
@@ -586,7 +586,7 @@ export function MultiStepForm({ settings, committees }: MultiStepFormProps) {
               Payment & Confirmation
             </h2>
             <p className="text-xs text-[#94A3B8] mt-1">
-              Delegate Fee: <strong className="text-white">{formatNPR(settings.registration_fee)}</strong> (Includes kit, lunches, stationery & DJ night)
+              Delegate Fee: <strong className="text-white">{formatNPR(settings.registration_fee)}</strong> (Includes kit, lunches, stationery & closing party)
             </p>
           </div>
 
@@ -715,10 +715,10 @@ export function MultiStepForm({ settings, committees }: MultiStepFormProps) {
 
           <div className="pt-3 flex flex-col sm:flex-row items-center justify-center gap-3 text-xs">
             <button
-              onClick={() => router.push(`/#after-party`)}
+              onClick={() => router.push(`/#party-songs`)}
               className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-white text-black font-semibold hover:bg-[#F1F5F9] transition-all"
             >
-              Request Party Songs
+              Song Recommendations for Party
             </button>
             <button
               onClick={() => router.push('/')}

@@ -202,7 +202,7 @@ export function SettingsManagementClient({
                 <div>
                   <h3 className="text-lg font-bold text-white">Dynamic Schedule Editor</h3>
                   <p className="text-xs text-[#94A3B8] mt-0.5">
-                    Changes here immediately update the public two-day timeline on the homepage.
+                    Changes here immediately update the public three-day timeline on the homepage.
                   </p>
                 </div>
 
@@ -212,7 +212,7 @@ export function SettingsManagementClient({
                     <button
                       type="button"
                       onClick={() => setScheduleDay(1)}
-                      className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                      className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
                         scheduleDay === 1 ? 'bg-white text-black' : 'text-[#94A3B8] hover:text-white'
                       }`}
                     >
@@ -221,11 +221,20 @@ export function SettingsManagementClient({
                     <button
                       type="button"
                       onClick={() => setScheduleDay(2)}
-                      className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                      className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
                         scheduleDay === 2 ? 'bg-white text-black' : 'text-[#94A3B8] hover:text-white'
                       }`}
                     >
                       Day 2
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setScheduleDay(3)}
+                      className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                        scheduleDay === 3 ? 'bg-white text-black' : 'text-[#94A3B8] hover:text-white'
+                      }`}
+                    >
+                      Day 3
                     </button>
                   </div>
 

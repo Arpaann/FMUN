@@ -61,13 +61,13 @@ export function Footer({
                 Events & Schedule
               </Link>
               <Link href="/register" className="hover:text-[#38BDF8] transition-colors">
-                Delegate Registration (30 Seats)
+                Delegate Registration
               </Link>
               <Link href="/#suggestions" className="hover:text-[#38BDF8] transition-colors">
                 Suggestions & Ideas
               </Link>
-              <Link href="/#after-party" className="hover:text-[#38BDF8] transition-colors">
-                DJ After-Party Requests
+              <Link href="/#party-songs" className="hover:text-[#38BDF8] transition-colors">
+                Song Recommendations for Party
               </Link>
             </div>
           </div>
