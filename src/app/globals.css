@@ -1,0 +1,96 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --color-midnight: #07111F;
+    --color-navy: #101E33;
+    --color-ivory: #F6F2E9;
+    --color-gold: #C9A96E;
+    --color-gold-light: #DFCA9B;
+    --color-gold-dark: #9F7E43;
+    --color-muted: #8B95A5;
+    --color-accent-red: #D94B4B;
+    --color-surface: #0B1728;
+    --color-surface-hover: #15253F;
+    --color-border: #1F304B;
+  }
+
+  body {
+    background-color: var(--color-midnight);
+    color: var(--color-ivory);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, .font-serif-heading {
+    font-family: 'Georgia', 'Times New Roman', Cambria, serif;
+    letter-spacing: -0.015em;
+  }
+}
+
+/* Custom diplomatic scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #07111F;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1F304B;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #C9A96E;
+}
+
+/* Diplomatic Glass & Glow utilities */
+.glass-panel {
+  background: rgba(16, 30, 51, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(201, 169, 110, 0.15);
+}
+
+.glass-panel-subtle {
+  background: rgba(11, 23, 40, 0.6);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(139, 149, 165, 0.15);
+}
+
+.gold-glow {
+  box-shadow: 0 0 25px -5px rgba(201, 169, 110, 0.25);
+}
+
+.gold-gradient-text {
+  background: linear-gradient(135deg, #F6F2E9 20%, #C9A96E 80%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gold-border-gradient {
+  border-image: linear-gradient(to right, rgba(201, 169, 110, 0.4), rgba(201, 169, 110, 0.05)) 1;
+}
+
+/* Subtle animation classes */
+@keyframes pulseSubtle {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.03); }
+}
+
+.animate-pulse-subtle {
+  animation: pulseSubtle 6s ease-in-out infinite;
+}
+
+@keyframes floatGrid {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+  100% { transform: translateY(0); }
+}
+
+.animate-float-grid {
+  animation: floatGrid 8s ease-in-out infinite;
+}
