@@ -2,21 +2,15 @@ import { db } from '@/lib/db';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Hero } from '@/components/home/Hero';
+import { EventsSection } from '@/components/home/EventsSection';
 import { ConferenceDetails } from '@/components/home/ConferenceDetails';
-import { CommitteesSection } from '@/components/home/CommitteesSection';
-import { CountryAvailabilityPreview } from '@/components/home/CountryAvailabilityPreview';
-import { AfterPartyTeaser } from '@/components/home/AfterPartyTeaser';
+import { DjRequestSection } from '@/components/home/DjRequestSection';
 import { FaqSection } from '@/components/home/FaqSection';
 
 export default async function HomePage() {
   const settings = await db.getSettings();
-  const committees = await db.getCommittees();
   const faqs = await db.getFaqs();
-
-  const firstCommitteeId = committees[0]?.id || '';
-  const initialCommitteeCountries = firstCommitteeId
-    ? await db.getCommitteeCountries(firstCommitteeId)
-    : [];
+  const approvedSongs = await db.getApprovedSongs();
 
   return (
     <div className="min-h-screen flex flex-col bg-[#07111F] text-[#F6F2E9]">
@@ -29,17 +23,11 @@ export default async function HomePage() {
           registrationOpen={settings.registration_open}
         />
 
+        <EventsSection />
+
         <ConferenceDetails settings={settings} />
 
-        <CommitteesSection committees={committees} />
-
-        <CountryAvailabilityPreview
-          committees={committees}
-          initialCommitteeCountries={initialCommitteeCountries}
-          selectedCommitteeId={firstCommitteeId}
-        />
-
-        <AfterPartyTeaser />
+        <DjRequestSection initialApprovedSongs={approvedSongs} />
 
         <FaqSection faqs={faqs} />
       </main>

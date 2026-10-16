@@ -11,17 +11,17 @@ export default async function RegisterPage() {
     <div className="min-h-screen flex flex-col bg-[#07111F] text-[#F6F2E9]">
       <Navbar registrationOpen={settings.registration_open} />
 
-      <main className="flex-1 py-12 sm:py-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-3 mb-8">
+      <main className="flex-1 py-10 sm:py-16">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 text-center space-y-2 mb-6">
           <span className="text-xs uppercase tracking-widest text-[#C9A96E] font-semibold">
-            Official Delegate Portal
+            Fluorescent MUN 2026
           </span>
-          <h1 className="font-serif-heading text-3xl sm:text-4xl font-bold text-[#F6F2E9]">
-            Delegate Registration & Country Selection
+          <h1 className="font-serif text-3xl sm:text-4xl font-bold text-[#F6F2E9]">
+            Delegate Registration
           </h1>
-          <p className="text-xs text-[#8B95A5] max-w-lg mx-auto">
-            Reserve your sovereign state in real time, configure committee credentials, and confirm your seat at
-            FMUN 2026.
+          <p className="text-xs text-[#8B95A5] max-w-md mx-auto">
+            Limited to 30 delegates across +2 Science & Management. Select your council and country below to reserve
+            your seat.
           </p>
         </div>
 

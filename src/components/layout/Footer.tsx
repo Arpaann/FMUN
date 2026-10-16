@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Globe, Mail, Phone, MapPin, ShieldCheck, Heart } from 'lucide-react';
+import { Mail, Phone, MapPin, Heart } from 'lucide-react';
 
 export function Footer({
   contactEmail,
@@ -14,125 +14,68 @@ export function Footer({
   address?: string | null;
 }) {
   return (
-    <footer className="w-full bg-[#050D17] border-t border-[#1F304B] text-[#8B95A5] pt-16 pb-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
-          {/* Column 1: Identity & Crest */}
-          <div className="space-y-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-full border border-[#C9A96E] bg-[#101E33] flex items-center justify-center text-[#C9A96E]">
-                <Globe className="w-5 h-5 text-[#C9A96E]" />
-              </div>
-              <div className="flex flex-col">
-                <span className="font-serif-heading font-bold text-lg text-[#F6F2E9]">
-                  FMUN <span className="text-[#C9A96E]">2026</span>
-                </span>
-                <span className="text-[10px] tracking-widest uppercase text-[#8B95A5]">
-                  Fluorescent Secondary School
-                </span>
-              </div>
-            </div>
-            <p className="text-xs leading-relaxed text-[#8B95A5]">
-              The inaugural Model United Nations conference hosted by Fluorescent Secondary School in
-              Kathmandu, Nepal. Fostering diplomacy, multilateral debate, and next-generation leadership.
+    <footer className="w-full bg-[#050D17] border-t border-[#1F304B] text-[#8B95A5] pt-12 pb-10">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pb-8 border-b border-[#1F304B]">
+          {/* Col 1 */}
+          <div className="space-y-2">
+            <span className="font-serif font-bold text-lg text-[#F6F2E9]">
+              FMUN <span className="text-[#C9A96E]">2026</span>
+            </span>
+            <p className="text-xs text-[#8B95A5] leading-relaxed">
+              Fluorescent Secondary School, Banasthali, Kathmandu. An intimate 30-delegate summit organized by and
+              for +2 Science & Management students.
             </p>
-            <div className="inline-flex items-center space-x-1.5 text-[11px] text-[#C9A96E] bg-[#101E33]/60 px-2.5 py-1 rounded border border-[#C9A96E]/20">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Official Institutional Platform</span>
-            </div>
           </div>
 
-          {/* Column 2: Quick Links */}
-          <div className="space-y-3">
-            <h4 className="font-serif-heading text-sm uppercase tracking-wider text-[#F6F2E9]">
-              Conference
+          {/* Col 2 */}
+          <div className="space-y-2 text-xs">
+            <h4 className="font-semibold text-[#F6F2E9] uppercase tracking-wider text-[11px]">
+              Quick Links
             </h4>
-            <ul className="space-y-2 text-xs">
-              <li>
-                <Link href="/about" className="hover:text-[#C9A96E] transition-colors">
-                  About FMUN & Objectives
-                </Link>
-              </li>
-              <li>
-                <Link href="/committees" className="hover:text-[#C9A96E] transition-colors">
-                  Committees & Agendas
-                </Link>
-              </li>
-              <li>
-                <Link href="/country-allocation" className="hover:text-[#C9A96E] transition-colors">
-                  Live Country Allocation Matrix
-                </Link>
-              </li>
-              <li>
-                <Link href="/conference-information" className="hover:text-[#C9A96E] transition-colors">
-                  Schedule, Rules & Handbook
-                </Link>
-              </li>
-              <li>
-                <Link href="/register" className="hover:text-[#C9A96E] transition-colors">
-                  Delegate Registration Portal
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Column 3: After-Party & Music */}
-          <div className="space-y-3">
-            <h4 className="font-serif-heading text-sm uppercase tracking-wider text-[#F6F2E9]">
-              Social & After-Party
-            </h4>
-            <p className="text-xs leading-relaxed">
-              Curated by the FMUN program management & DJ team. Recommend your favorite tracks for our
-              diplomatic social celebration.
-            </p>
-            <div className="pt-2">
-              <Link
-                href="/after-party/submit"
-                className="inline-flex items-center space-x-2 text-xs px-3 py-1.5 rounded bg-[#101E33] hover:bg-[#15253F] text-[#C9A96E] border border-[#C9A96E]/30 transition-colors"
-              >
-                <span>Submit Track Recommendation</span>
+            <div className="flex flex-col space-y-1.5">
+              <Link href="/" className="hover:text-[#C9A96E]">
+                Home
+              </Link>
+              <Link href="/#events" className="hover:text-[#C9A96E]">
+                Events & Schedule
+              </Link>
+              <Link href="/register" className="hover:text-[#C9A96E]">
+                Register as Delegate (30 Seats)
+              </Link>
+              <Link href="/#after-party" className="hover:text-[#C9A96E]">
+                After-Party DJ Requests
+              </Link>
+              <Link href="/contact" className="hover:text-[#C9A96E]">
+                Contact Secretariat
               </Link>
             </div>
           </div>
 
-          {/* Column 4: Official Contact & Venue */}
-          <div className="space-y-3">
-            <h4 className="font-serif-heading text-sm uppercase tracking-wider text-[#F6F2E9]">
-              Secretariat Contact
+          {/* Col 3 */}
+          <div className="space-y-2 text-xs">
+            <h4 className="font-semibold text-[#F6F2E9] uppercase tracking-wider text-[11px]">
+              Campus Venue
             </h4>
-            <div className="space-y-2 text-xs">
-              <div className="flex items-start space-x-2">
-                <MapPin className="w-4 h-4 text-[#C9A96E] shrink-0 mt-0.5" />
-                <span>
-                  {address || 'Fluorescent Secondary School, Banasthali, Kathmandu, Nepal'}
-                </span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Mail className="w-4 h-4 text-[#C9A96E] shrink-0" />
-                <span>{contactEmail || 'Official email coming soon'}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Phone className="w-4 h-4 text-[#C9A96E] shrink-0" />
-                <span>{contactPhone || 'Official phone coming soon'}</span>
-              </div>
+            <div className="space-y-1 text-[#8B95A5]">
+              <p className="flex items-start space-x-1.5">
+                <MapPin className="w-3.5 h-3.5 text-[#C9A96E] shrink-0 mt-0.5" />
+                <span>{address || 'Fluorescent Secondary School, Banasthali, Kathmandu'}</span>
+              </p>
+              <p className="flex items-center space-x-1.5">
+                <Mail className="w-3.5 h-3.5 text-[#C9A96E] shrink-0" />
+                <span>{contactEmail || 'fmun2026@fluorescent.edu.np'}</span>
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Bottom Line */}
-        <div className="mt-12 pt-8 border-t border-[#1F304B] flex flex-col sm:flex-row items-center justify-between text-xs space-y-4 sm:space-y-0">
-          <p>© 2026 Fluorescent Model United Nations (FMUN). All rights reserved.</p>
-          <div className="flex items-center space-x-6 text-[11px]">
-            <Link href="/faq" className="hover:text-[#C9A96E]">
-              FAQs
-            </Link>
-            <Link href="/conference-information#rules" className="hover:text-[#C9A96E]">
-              Code of Conduct
-            </Link>
-            <Link href="/admin" className="hover:text-[#C9A96E]">
-              Secretariat Login
-            </Link>
-          </div>
+        {/* Bottom */}
+        <div className="pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-[#8B95A5] space-y-2 sm:space-y-0">
+          <p>© 2026 Fluorescent Model United Nations. Organized by Fluorescent Secondary School.</p>
+          <Link href="/admin" className="text-[#8B95A5] hover:text-[#C9A96E] text-[11px]">
+            Secretariat Login →
+          </Link>
         </div>
       </div>
     </footer>
